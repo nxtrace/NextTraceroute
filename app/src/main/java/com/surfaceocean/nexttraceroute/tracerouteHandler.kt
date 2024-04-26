@@ -1,5 +1,5 @@
 /*
-
+-
 NextTraceroute, an Android traceroute app using Nexttrace API
 Copyright (C) 2024 surfaceocean
 Email: r2qb8uc5@protonmail.com
@@ -220,6 +220,233 @@ class TracerouteHandler {
 
 
     @Composable
+    fun MainWSHandler(threadMutex: Mutex, tracerouteThreadsIntList: MutableList<Int>, scope: CoroutineScope,
+                      apiHostName: MutableState<String>, preferredAPIIp: MutableState<String>, apiToken: MutableState<String>,
+                      gridDataList: MutableList<MutableList<MutableList<MutableState<String>>>>,
+                      currentLanguage: MutableState<String>,
+                      traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
+                      insertion:MutableState<String>, //testAPIText:MutableState<String>,
+                      isAPIFinished:MutableState<Boolean>,
+                      ){
+        LaunchedEffect(Unit) {
+            scope.launch(Dispatchers.IO) {
+                //ggbang
+                val uniqueID = Random.nextInt(1, Int.MAX_VALUE)
+                threadMutex.withLock {
+                    tracerouteThreadsIntList.add(uniqueID)
+                }
+                var maxBootRetries=40
+                while(maxBootRetries>=0){
+                    delay(timeMillis = 500)
+                    if(apiToken.value!="" && preferredAPIIp.value!=""){
+                        break
+                    }
+                    maxBootRetries-=1
+                }
+                if(maxBootRetries<0){
+                    threadMutex.withLock {
+                        tracerouteThreadsIntList.indices.forEach { index ->
+                            if (tracerouteThreadsIntList[index] == uniqueID) {
+                                tracerouteThreadsIntList[index] = 0
+                            }
+                        }
+                        tracerouteThreadsIntList.add(0)
+                    }
+                    return@launch
+                }
+
+                val wsTempDataMap:MutableMap<String, Any> = mutableMapOf(
+                    "currentIP" to "",
+                    "currentIndex" to 114514,
+                    "isApiSuccessful" to false
+                )
+                var maxReconnects = 5
+                while(maxReconnects>0){
+                    try{
+                        val currentLocale = Locale.getDefault()
+                        val isChinese = currentLocale.language.startsWith("zh")
+                        var jsonData: JsonObject
+                        val customDns = object : Dns {
+                            override fun lookup(hostname: String): List<InetAddress> {
+                                return InetAddress.getAllByName(preferredAPIIp.value).toList()
+                            }
+                        }
+                        val client = OkHttpClient.Builder()
+                            .connectTimeout(5, TimeUnit.SECONDS)
+                            .readTimeout(5, TimeUnit.SECONDS)
+                            .writeTimeout(5, TimeUnit.SECONDS)
+                            .pingInterval(5,TimeUnit.SECONDS)
+                            .dns(customDns)
+                            .build()
+                        val getAPIHeaders = mapOf(
+                            "Host" to apiHostName.value,
+                            "User-Agent" to "NextTrace v5.1.4/linux/android NextTracerouteAndroid/" + BuildConfig.VERSION_NAME,
+                            "Authorization" to "Bearer " + apiToken.value,
+                        )
+                        val getAPIURL = "wss://" + apiHostName.value + "/v3/ipGeoWs"
+                        val getPOWRequest = Request.Builder()
+                            .url(getAPIURL)
+                        getAPIHeaders.forEach { (key, value) ->
+                            getPOWRequest.addHeader(key, value)
+                        }
+                        val requestBuilder = getPOWRequest.build()
+                        val webSocketListener = object : WebSocketListener() {
+                            override fun onMessage(webSocket: WebSocket, text: String) {
+                                if (text != "" && wsTempDataMap["currentIP"] != "" && wsTempDataMap["currentIndex"] != 114514) {
+                                    jsonData = JsonParser.parseString(text).asJsonObject
+                                    if ((currentLanguage.value == "Default" && isChinese) || currentLanguage.value == "zh") {
+                                        val asNumberData =
+                                            jsonData.getAsJsonPrimitive("asnumber").asString
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][0][2].value =
+                                            if (asNumberData.isNullOrEmpty()) "*" else "AS$asNumberData"
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][0][3].value =
+                                            jsonData.getAsJsonPrimitive("whois").asString.takeUnless { it.isNullOrEmpty() }
+                                                ?: "*"
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][1][0].value =
+                                            (jsonData.getAsJsonPrimitive("country").asString + " " +
+                                                    jsonData.getAsJsonPrimitive("prov").asString + " " +
+                                                    jsonData.getAsJsonPrimitive("city").asString + " " +
+                                                    jsonData.getAsJsonPrimitive("domain").asString).takeUnless { it.isEmpty() }
+                                                ?: "*"
+
+                                    } else {
+                                        val asNumberData =
+                                            jsonData.getAsJsonPrimitive("asnumber").asString
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][0][2].value =
+                                            if (asNumberData.isNullOrEmpty()) "*" else "AS$asNumberData"
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][0][3].value =
+                                            jsonData.getAsJsonPrimitive("whois").asString.takeUnless { it.isNullOrEmpty() }
+                                                ?: "*"
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][1][0].value =
+                                            (jsonData.getAsJsonPrimitive("country_en").asString + " " +
+                                                    jsonData.getAsJsonPrimitive("prov_en").asString + " " +
+                                                    jsonData.getAsJsonPrimitive("city_en").asString + " " +
+                                                    jsonData.getAsJsonPrimitive("domain").asString).takeUnless { it.isEmpty() }
+                                                ?: "*"
+                                    }
+                                    val mapTraceSingleData = mutableMapOf(
+                                        "Success" to true,
+                                        "Address" to mapOf("IP" to wsTempDataMap["currentIP"].toString(), "zone" to ""),
+                                        "Hostname" to "",
+                                        "TTL" to (wsTempDataMap["currentIndex"] as Int) +1,
+                                        //"RTT" to 114514,
+                                        "Error" to null,
+                                        "Geo" to mutableMapOf(
+                                            "ip" to "",
+                                            "asnumber" to jsonData.getAsJsonPrimitive("asnumber").asString,
+                                            "country" to jsonData.getAsJsonPrimitive("country").asString,
+                                            "country_en" to jsonData.getAsJsonPrimitive("country_en").asString,
+                                            "prov" to jsonData.getAsJsonPrimitive("prov").asString,
+                                            "prov_en" to jsonData.getAsJsonPrimitive("prov_en").asString,
+                                            "city" to jsonData.getAsJsonPrimitive("city").asString,
+                                            "city_en" to jsonData.getAsJsonPrimitive("city_en").asString,
+                                            "district" to "",
+                                            "owner" to jsonData.getAsJsonPrimitive("owner").asString,
+                                            "isp" to jsonData.getAsJsonPrimitive("isp").asString,
+                                            "domain" to jsonData.getAsJsonPrimitive("domain").asString,
+                                            "whois" to jsonData.getAsJsonPrimitive("whois").asString,
+                                            "lat" to (if (jsonData.getAsJsonPrimitive("lat").asDouble == 0.0){0}else{jsonData.getAsJsonPrimitive("lat").asDouble}),
+                                            "lng" to (if (jsonData.getAsJsonPrimitive("lng").asDouble == 0.0){0}else{jsonData.getAsJsonPrimitive("lng").asDouble}),
+                                            "prefix" to "",
+                                            "router" to mapOf<Any, Any>(),
+                                            "source" to ""
+                                        ),
+                                        "Lang" to "cn",
+                                        "MPLS" to null
+                                    )
+                                    traceMapThreadsMapList.add(listOf(mapTraceSingleData))
+                                    wsTempDataMap["isApiSuccessful"] = true
+                                }
+
+                            }
+
+                        }
+
+                        val webSocketReq = client.newWebSocket(requestBuilder, webSocketListener)
+
+                        var targetCursor=114514
+                        var stopSignal=false
+                        while (!stopSignal){
+                            delay(timeMillis = 200)
+
+                            var notFinishedCursor=1919810
+                            for((index,item) in gridDataList.withIndex()){
+
+                                if(item[0][1].value!="*"&&item[0][1].value!=""&&item[0][2].value!="*"){
+                                    var maxAPIRetries = 10
+                                    wsTempDataMap["currentIP"]=item[0][1].value
+                                    wsTempDataMap["currentIndex"]=index
+                                    wsTempDataMap["isApiSuccessful"]=false
+                                    webSocketReq.send(wsTempDataMap["currentIP"] as String)
+                                    while(maxAPIRetries>0){
+                                        delay(timeMillis = 200)
+                                        //testAPIText.value=item[0][1].value+wsTempDataMap["currentIP"].toString()+" "+wsTempDataMap["currentIndex"].toString()+" "+wsTempDataMap["isApiSuccessful"].toString()+" "+System.currentTimeMillis().toString()
+                                        if(wsTempDataMap["isApiSuccessful"]==true){
+                                            wsTempDataMap["currentIP"]=""
+                                            wsTempDataMap["currentIndex"]=114514
+                                            wsTempDataMap["isApiSuccessful"]=false
+                                            break
+                                        }
+                                        maxAPIRetries-=1
+                                    }
+                                    if(maxAPIRetries<=0){
+                                        item[0][2].value="*"
+                                        wsTempDataMap["currentIP"]=""
+                                        wsTempDataMap["currentIndex"]=114514
+                                        wsTempDataMap["isApiSuccessful"]=false
+                                    }
+
+                                }
+
+
+
+                                if(item[0][1].value==insertion.value){
+                                    targetCursor=index
+                                }
+                                if(item[0][1].value=="" ||(item[0][1].value!="" && item[0][1].value!="*" && item[0][2].value=="")){
+                                    if(index<notFinishedCursor){
+                                        notFinishedCursor=index
+                                    }
+
+                                }
+                            }
+                            //testAPItext.value=wsTempDataMap["currentIP"]as String+" "+notFinishedCursor.toString()+" "+targetCursor.toString()+ "  " + System.currentTimeMillis().toString()
+                            if(notFinishedCursor>targetCursor){
+                                webSocketReq.close(1000,"oh, I'm coming")
+                                stopSignal=true
+                                maxReconnects=0
+                                isAPIFinished.value=true
+                            }
+                        }
+
+
+
+                    }catch(e:Exception){
+                        maxReconnects-=1
+                        delay(timeMillis = 1000)
+                        continue
+
+                    }
+                }
+
+
+                isAPIFinished.value=true
+                threadMutex.withLock {
+                    tracerouteThreadsIntList.indices.forEach { index ->
+                        if (tracerouteThreadsIntList[index] == uniqueID) {
+                            tracerouteThreadsIntList[index] = 0
+                        }
+                    }
+                    tracerouteThreadsIntList.add(0)
+                }
+
+
+            }
+        }
+
+    }
+
+    @Composable
     fun APIDNSHandler(//testAPIText: MutableState<String>,
         threadMutex: Mutex, tracerouteThreadsIntList: MutableList<Int>, scope: CoroutineScope,
         tracerouteDNSServer: MutableState<String>,
@@ -292,9 +519,9 @@ class TracerouteHandler {
                                         }
                                     }
                                     val client = OkHttpClient.Builder()
-                                        .connectTimeout(10, TimeUnit.SECONDS)
-                                        .readTimeout(10, TimeUnit.SECONDS)
-                                        .writeTimeout(10, TimeUnit.SECONDS)
+                                        .connectTimeout(5, TimeUnit.SECONDS)
+                                        .readTimeout(5, TimeUnit.SECONDS)
+                                        .writeTimeout(5, TimeUnit.SECONDS)
                                         .dns(customDns)
                                         .build()
                                     val getAPIHeaders = mapOf(
@@ -327,14 +554,6 @@ class TracerouteHandler {
                                                 isRequestSuccessful = true
                                             }
 
-                                        }
-
-                                        override fun onClosing(
-                                            webSocket: WebSocket,
-                                            code: Int,
-                                            reason: String
-                                        ) {
-                                            webSocket.close(1000, "oh, I'm coming")
                                         }
                                     }
                                     val webSocketReq =
@@ -391,20 +610,20 @@ class TracerouteHandler {
     fun APIPOWHandler(//testAPIText: MutableState<String>,
         threadMutex: Mutex, tracerouteThreadsIntList: MutableList<Int>, scope: CoroutineScope,
         tracerouteDNSServer: MutableState<String>,
-        apiHostName: MutableState<String>, apiDNSName: MutableState<String>,
-        preferredAPIIp: MutableState<String>, apiDNSList: MutableList<String>,
+        apiHostNamePOW: MutableState<String>, apiDNSNamePOW: MutableState<String>,
+        preferredAPIIpPOW: MutableState<String>, apiDNSListPOW: MutableList<String>,
         apiToken: MutableState<String>, currentDOHServer: MutableState<String>,
         currentDNSMode: MutableState<String>
     ) {
 
-        if (preferredAPIIp.value == "") {
+        if (preferredAPIIpPOW.value == "") {
             val powMutex = Mutex()
             val powMutexList = mutableListOf(0)
             ResolveHandler(
                 threadMutex = powMutex, tracerouteThreadsIntList = powMutexList,
                 scope = scope,
-                name = apiDNSName.value, tracerouteDNSServer = tracerouteDNSServer,
-                multipleIps = apiDNSList, multipleIpStateMode = false,
+                name = apiDNSNamePOW.value, tracerouteDNSServer = tracerouteDNSServer,
+                multipleIps = apiDNSListPOW, multipleIpStateMode = false,
                 currentDNSMode = currentDNSMode,
                 currentDOHServer = currentDOHServer
             )
@@ -444,15 +663,15 @@ class TracerouteHandler {
                     }
                     var maxTriesOfAPIDNS = 3
                     while (maxTriesOfAPIDNS >= 0) {
-                        if (preferredAPIIp.value != "" && apiToken.value != "") {
+                        if (preferredAPIIpPOW.value != "" && apiToken.value != "") {
                             break
                         }
-                        if (apiDNSList.size != 0) {
-                            if (preferredAPIIp.value != "" && apiToken.value != "") {
+                        if (apiDNSListPOW.size != 0) {
+                            if (preferredAPIIpPOW.value != "" && apiToken.value != "") {
                                 break
                             }
-                            for (i in apiDNSList) {
-                                if (preferredAPIIp.value != "" && apiToken.value != "") {
+                            for (i in apiDNSListPOW) {
+                                if (preferredAPIIpPOW.value != "" && apiToken.value != "") {
                                     break
                                 }
                                 try {
@@ -476,11 +695,11 @@ class TracerouteHandler {
                                     )
                                     val getPOWHeaders = mapOf(
                                         //"Authorization" to "Bearer ",
-                                        "Host" to apiHostName.value,
+                                        "Host" to apiHostNamePOW.value,
                                         "User-Agent" to "NextTrace v5.1.4/linux/android NextTracerouteAndroid/" + BuildConfig.VERSION_NAME
                                     )
                                     val getPOWURL =
-                                        "https://" + apiHostName.value + "/v3/challenge/request_challenge"
+                                        "https://" + apiHostNamePOW.value + "/v3/challenge/request_challenge"
                                     //val getPOWURL="http://192.168.3.17:55000/request_challenge"
                                     val getPOWRequest = Request.Builder()
                                         .url(getPOWURL)
@@ -538,14 +757,14 @@ class TracerouteHandler {
                                                         submitPOWMediaType
                                                     )
                                                 val submitPOWHeaders = mapOf(
-                                                    "Host" to apiHostName.value,
+                                                    "Host" to apiHostNamePOW.value,
                                                     "User-Agent" to "NextTrace v5.1.4/linux/android NextTracerouteAndroid/" + BuildConfig.VERSION_NAME,
                                                     "Content-Length" to submitPOWBody.contentLength()
                                                         .toString(),
                                                     "Content-Type" to "application/json"
                                                 )
                                                 val submitPOWURL =
-                                                    "https://" + apiHostName.value + "/v3/challenge/submit_answer"
+                                                    "https://" + apiHostNamePOW.value + "/v3/challenge/submit_answer"
                                                 //val submitPOWURL="http://192.168.3.17:55000/submit_answer"
                                                 val submitPOWRequest = Request.Builder()
                                                     .url(submitPOWURL).post(submitPOWBody)
@@ -566,7 +785,7 @@ class TracerouteHandler {
                                                             submitPOWJsonElement.getAsJsonPrimitive(
                                                                 "token"
                                                             ).asString
-                                                        preferredAPIIp.value = i
+                                                        preferredAPIIpPOW.value = i
                                                         maxTriesOfAPIDNS = -1
                                                         threadMutex.withLock {
                                                             tracerouteThreadsIntList.indices.forEach { index ->
@@ -649,12 +868,16 @@ class TracerouteHandler {
         isDNSInProgress: MutableState<Boolean>, //testAPIText: MutableState<String>,
         currentDOHServer: MutableState<String>,
         currentDNSMode: MutableState<String>, isTraceMapEnabled: MutableState<Boolean>,
-        traceMapURL: MutableState<String>, traceMapMutex: Mutex,
+        traceMapURL: MutableState<String>,
         apiHostName: MutableState<String>,
         preferredAPIIp: MutableState<String>,
-        traceMapThreadsIntList: MutableList<Int>,
         traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
-        isSearchBarEnabled: MutableState<Boolean>
+        isSearchBarEnabled: MutableState<Boolean>,
+        isAPIFinished: MutableState<Boolean>,apiToken: MutableState<String>,currentLanguage: MutableState<String>,
+        apiHostNamePOW: MutableState<String>, apiDNSNamePOW: MutableState<String>,
+        preferredAPIIpPOW: MutableState<String>, apiDNSListPOW: MutableList<String>,
+        apiDNSList: MutableList<String>,apiDNSName: MutableState<String>,
+
 
     ) {
 
@@ -761,15 +984,21 @@ class TracerouteHandler {
                     }
                     var maxTriesDNS = 20
                     while (maxTriesDNS >= 0) {
-                        if (dnsThreadsList.all { it == 0 }) {
-                            isDNSInProgress.value = false
+                        //testAPIText.value=maxTriesDNS.toString()
+                        threadMutex.withLock{
+                            if (dnsThreadsList.all { it == 0 }) {
+                                isDNSInProgress.value = false
+                            }
+                        }
+                        if(!isDNSInProgress.value){
                             break
                         }
-                        delay(500)
+                        delay(timeMillis =500)
                         maxTriesDNS -= 1
                     }
-                    if (multipleIps.size == 0 || isDNSInProgress.value) {
-                        isDNSInProgress.value = false
+                    isDNSInProgress.value = false
+                    if (multipleIps.size == 0) {
+
                         insertErrorText.value =
                             "No DNS response yet! Check hostname and DNS setting!"
                         isSearchBarEnabled.value = true
@@ -823,6 +1052,43 @@ class TracerouteHandler {
 
                 }
             }
+
+            //api handler
+           APIPOWHandler(
+                scope = scope, threadMutex = threadMutex,
+                tracerouteThreadsIntList = tracerouteThreadsIntList,
+                tracerouteDNSServer = tracerouteDNSServer,
+                preferredAPIIpPOW = preferredAPIIpPOW, //testAPIText = testText,
+                apiHostNamePOW = apiHostNamePOW,
+                apiDNSNamePOW = apiDNSNamePOW,
+                apiDNSListPOW = apiDNSListPOW,
+                apiToken = apiToken,
+                currentDOHServer = currentDOHServer,
+                currentDNSMode = currentDNSMode
+            )
+            APIDNSHandler(
+                scope = scope, threadMutex = threadMutex,
+                tracerouteThreadsIntList = tracerouteThreadsIntList,
+                tracerouteDNSServer = tracerouteDNSServer,
+                preferredAPIIp = preferredAPIIp, //testAPIText = testText,
+                apiHostName = apiHostName,
+                apiDNSName = apiDNSName,
+                apiDNSList = apiDNSList,
+                apiToken = apiToken,
+                currentDNSMode = currentDNSMode,
+                currentDOHServer = currentDOHServer
+            )
+
+
+            MainWSHandler(threadMutex=threadMutex, tracerouteThreadsIntList=tracerouteThreadsIntList, scope=scope,
+                apiHostName=apiHostName,preferredAPIIp=preferredAPIIp,apiToken=apiToken,
+                gridDataList=gridDataList,
+                currentLanguage=currentLanguage,
+                traceMapThreadsMapList=traceMapThreadsMapList, isAPIFinished = isAPIFinished,
+                insertion=insertion
+            )
+
+
             //tracemap handler
             if (isTraceMapEnabled.value) {
                 LaunchedEffect(Unit) {
@@ -830,38 +1096,15 @@ class TracerouteHandler {
                         val uniqueID = Random.nextInt(1, Int.MAX_VALUE)
                         threadMutex.withLock { tracerouteThreadsIntList.add(uniqueID) }
 
-                        delay(timeMillis = 5000)
-                        var apiMaxTries = 20
-                        while (apiMaxTries >= 0) {
-                            var isAPIFinished = false
-                            traceMapMutex.withLock {
-                                if (traceMapThreadsIntList.all { it == 0 } && preferredAPIIp.value != "") {
-                                    isAPIFinished = true
-                                }
-                            }
-                            if (isAPIFinished) {
+
+                        while(true){
+                            delay(timeMillis = 500)
+                            if(isAPIFinished.value){
                                 break
-                            } else {
-                                apiMaxTries -= 1
                             }
-                            delay(timeMillis = 500)
                         }
-                        if (apiMaxTries < 0) {
-                            threadMutex.withLock {
-                                tracerouteThreadsIntList.indices.forEach { index ->
-                                    if (tracerouteThreadsIntList[index] == uniqueID) {
-                                        tracerouteThreadsIntList[index] = 0
-                                    }
-                                }
-                                tracerouteThreadsIntList.add(0)
-                            }
-                            return@launch
-                        }
-                        var maxTries = 20
-                        while (traceMapThreadsMapList.size == 0 && maxTries > 0) {
-                            delay(timeMillis = 500)
-                            maxTries -= 1
-                        }
+                        //ggbang
+                        //testAPIText.value=traceMapThreadsMapList.size.toString()
                         if (traceMapThreadsMapList.size == 0) {
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
@@ -873,7 +1116,19 @@ class TracerouteHandler {
                             }
                             return@launch
                         }
-                        traceMapThreadsMapList.sortBy { it[0]["TTL"] as? Int ?: 0 }
+                        val tempList= mutableListOf<List<MutableMap<String, Any?>>>()
+                        for(i in traceMapThreadsMapList){
+                            var isDuplicate =false
+                            for(j in tempList){
+                                if(i[0]["Address"]==j[0]["Address"]){
+                                    isDuplicate=true
+                                }
+                            }
+                            if(!isDuplicate){
+                                tempList.add(i)
+                            }
+                        }
+                        tempList.sortBy { it[0]["TTL"] as? Int ?: 0 }
                         try {
                             val customDns = object : Dns {
                                 override fun lookup(hostname: String): List<InetAddress> {
@@ -887,11 +1142,12 @@ class TracerouteHandler {
                                 .dns(customDns)
                                 .build()
                             val submitTraceMapList = mapOf(
-                                "Hops" to traceMapThreadsMapList,
+                                "Hops" to tempList,
                                 "TraceMapUrl" to ""
                             )
                             val submitTraceMapJson =
                                 GsonBuilder().serializeNulls().create().toJson(submitTraceMapList)
+                            //testAPIText.value=submitTraceMapJson
                             val submitTraceMapType = "application/json".toMediaType()
                             val submitTraceMapBody =
                                 submitTraceMapJson.toRequestBody(submitTraceMapType)
@@ -917,6 +1173,7 @@ class TracerouteHandler {
                                     //testAPIText.value=traceMapURL.value
                                 }
                             }
+                            submitTraceMapCall.close()
                         } catch (e2: Exception) {
                             Log.e("APIPowHandler", e2.printStackTrace().toString())
                             threadMutex.withLock {
@@ -1051,7 +1308,7 @@ class TracerouteHandler {
                         if (isADOHRequestSuccessful) {
                             break
                         }
-                        delay(timeMillis = 500)
+                        delay(timeMillis = 100)
                         maxADOHTries -= 1
 
                     }
@@ -1109,7 +1366,7 @@ class TracerouteHandler {
                             break
                         }
                         maxTriesA -= 1
-                        delay(timeMillis = 200)
+                        delay(timeMillis = 100)
                     }
                 }
 
@@ -1201,7 +1458,7 @@ class TracerouteHandler {
                         if (isDOHRequestAAAASuccessful) {
                             break
                         }
-                        delay(timeMillis = 500)
+                        delay(timeMillis = 100)
                         maxAAAADOHTries -= 1
 
                     }
@@ -1263,7 +1520,7 @@ class TracerouteHandler {
                             break
                         }
                         maxRetriesAAAA -= 1
-                        delay(timeMillis = 200)
+                        delay(timeMillis = 100)
                     }
                 }
 
@@ -1494,7 +1751,7 @@ class TracerouteHandler {
                         if (isCNAMEDOHRequestSuccessful) {
                             break
                         }
-                        delay(timeMillis = 500)
+                        delay(timeMillis = 100)
                         maxCNAMEDOHTries -= 1
 
                     }
@@ -1640,7 +1897,7 @@ class TracerouteHandler {
                             break
                         }
                         maxCNAMERetries -= 1
-                        delay(timeMillis = 200)
+                        delay(timeMillis = 100)
 
 
                     }
@@ -1668,14 +1925,9 @@ class TracerouteHandler {
         gridDataList: MutableList<MutableList<MutableList<MutableState<String>>>>,
         scope: CoroutineScope, tracerouteDNSServer: MutableState<String>,
         count: MutableState<String>, timeout: MutableState<String>,
-        //testAPIText: MutableState<String>,
-        apiHostName: MutableState<String>,
-        preferredAPIIp: MutableState<String>,
-        apiToken: MutableState<String>, currentLanguage: MutableState<String>,
-        traceMapThreadsIntList: MutableList<Int>, traceMapMutex: Mutex,
-        traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
         currentDOHServer: MutableState<String>,
         currentDNSMode: MutableState<String>
+
 
     ) {
         for ((index, item) in gridDataList.withIndex()) {
@@ -1786,7 +2038,7 @@ class TracerouteHandler {
                                     if (isPTR4DOHRequestSuccessful) {
                                         break
                                     }
-                                    delay(timeMillis = 500)
+                                    delay(timeMillis = 100)
                                     maxPTR4DOHTries -= 1
 
                                 }
@@ -1960,7 +2212,7 @@ class TracerouteHandler {
                                     if (isPTR6DOHRequestSuccessful) {
                                         break
                                     }
-                                    delay(timeMillis = 500)
+                                    delay(timeMillis = 100)
                                     maxPTR6DOHTries -= 1
 
                                 }
@@ -2029,271 +2281,6 @@ class TracerouteHandler {
                         }
                     }
 
-
-//                    //prevent duplicate recompose
-//                    singleHopCursor[index].value=item[0][1].value
-                }
-                //NextTrace API:POW
-                LaunchedEffect(Unit) {
-                    scope.launch(Dispatchers.IO) {
-                        val uniqueID = Random.nextInt(1, Int.MAX_VALUE)
-                        threadMutex.withLock {
-                            tracerouteThreadsIntList.add(uniqueID)
-                        }
-                        //start map trace after the api query finished
-                        val uniqueID2 = Random.nextInt(1, Int.MAX_VALUE)
-                        traceMapMutex.withLock {
-                            traceMapThreadsIntList.add(uniqueID2)
-                        }
-
-
-                        //delay(timeMillis = 1000)
-                        //it starts after API test finished
-                        var maxTriesOfAPIToken = 40
-                        while (maxTriesOfAPIToken >= 0) {
-                            delay(timeMillis = 500)
-                            if (preferredAPIIp.value != "" && apiToken.value != "") {
-                                break
-                            }
-                            maxTriesOfAPIToken -= 1
-                        }
-                        if (maxTriesOfAPIToken < 0) {
-                            threadMutex.withLock {
-                                tracerouteThreadsIntList.indices.forEach { index ->
-                                    if (tracerouteThreadsIntList[index] == uniqueID) {
-                                        tracerouteThreadsIntList[index] = 0
-                                    }
-                                }
-                                tracerouteThreadsIntList.add(0)
-                            }
-                            return@launch
-                        }
-                        var maxTriesOfAPIReq = 3
-                        while (maxTriesOfAPIReq >= 0) {
-                            try {
-                                val currentLocale = Locale.getDefault()
-                                val isChinese = currentLocale.language.startsWith("zh")
-                                //get first usable ip and test ws
-                                var isRequestSuccessful = false
-                                var jsonData = JsonObject()
-                                val customDns = object : Dns {
-                                    override fun lookup(hostname: String): List<InetAddress> {
-                                        return InetAddress.getAllByName(preferredAPIIp.value)
-                                            .toList()
-                                    }
-                                }
-                                val client = OkHttpClient.Builder()
-                                    .connectTimeout(5, TimeUnit.SECONDS)
-                                    .readTimeout(5, TimeUnit.SECONDS)
-                                    .writeTimeout(5, TimeUnit.SECONDS)
-                                    .dns(customDns)
-                                    .build()
-                                val mapTraceSingleData = mutableMapOf(
-                                    "Success" to false,
-                                    "Address" to mapOf("IP" to item[0][1].value, "zone" to ""),
-                                    "Hostname" to "",
-                                    "TTL" to index + 1,
-                                    //"RTT" to 114514,
-                                    "Error" to null,
-                                    "Geo" to mutableMapOf(
-                                        "ip" to "",
-                                        "asnumber" to "",
-                                        "country" to "",
-                                        "country_en" to "",
-                                        "prov" to "",
-                                        "prov_en" to "",
-                                        "city" to "",
-                                        "city_en" to "",
-                                        "district" to "",
-                                        "owner" to "",
-                                        "isp" to "",
-                                        "domain" to "",
-                                        "whois" to "",
-                                        "lat" to 0,
-                                        "lng" to 0,
-                                        "prefix" to "",
-                                        "router" to mapOf<Any, Any>(),
-                                        "source" to ""
-                                    ),
-                                    "Lang" to "cn",
-                                    "MPLS" to null
-                                )
-                                val getAPIHeaders = mapOf(
-                                    "Host" to apiHostName.value,
-                                    "User-Agent" to "NextTrace v5.1.4/linux/android NextTracerouteAndroid/" + BuildConfig.VERSION_NAME,
-                                    "Authorization" to "Bearer " + apiToken.value,
-                                )
-                                val getAPIURL = "wss://" + apiHostName.value + "/v3/ipGeoWs"
-                                val getPOWRequest = Request.Builder()
-                                    .url(getAPIURL)
-                                getAPIHeaders.forEach { (key, value) ->
-                                    getPOWRequest.addHeader(key, value)
-                                }
-                                val requestBuilder = getPOWRequest.build()
-                                val webSocketListener = object : WebSocketListener() {
-                                    override fun onOpen(webSocket: WebSocket, response: Response) {
-                                        webSocket.send(item[0][1].value)
-                                    }
-
-                                    override fun onMessage(webSocket: WebSocket, text: String) {
-                                        if (text != "") {
-                                            jsonData = JsonParser.parseString(text).asJsonObject
-                                            if ((currentLanguage.value == "Default" && isChinese) || currentLanguage.value == "zh") {
-                                                val asNumberData =
-                                                    jsonData.getAsJsonPrimitive("asnumber").asString
-                                                item[0][2].value =
-                                                    if (asNumberData.isNullOrEmpty()) "*" else "AS$asNumberData"
-                                                item[0][3].value =
-                                                    jsonData.getAsJsonPrimitive("whois").asString.takeUnless { it.isNullOrEmpty() }
-                                                        ?: "*"
-                                                item[1][0].value =
-                                                    (jsonData.getAsJsonPrimitive("country").asString + " " +
-                                                            jsonData.getAsJsonPrimitive("prov").asString + " " +
-                                                            jsonData.getAsJsonPrimitive("city").asString + " " +
-                                                            jsonData.getAsJsonPrimitive("domain").asString).takeUnless { it.isEmpty() }
-                                                        ?: "*"
-
-                                            } else {
-                                                val asNumberData =
-                                                    jsonData.getAsJsonPrimitive("asnumber").asString
-                                                item[0][2].value =
-                                                    if (asNumberData.isNullOrEmpty()) "*" else "AS$asNumberData"
-                                                item[0][3].value =
-                                                    jsonData.getAsJsonPrimitive("whois").asString.takeUnless { it.isNullOrEmpty() }
-                                                        ?: "*"
-                                                item[1][0].value =
-                                                    (jsonData.getAsJsonPrimitive("country_en").asString + " " +
-                                                            jsonData.getAsJsonPrimitive("prov_en").asString + " " +
-                                                            jsonData.getAsJsonPrimitive("city_en").asString + " " +
-                                                            jsonData.getAsJsonPrimitive("domain").asString).takeUnless { it.isEmpty() }
-                                                        ?: "*"
-                                            }
-
-                                            isRequestSuccessful = true
-                                        }
-
-                                    }
-
-                                    override fun onClosing(
-                                        webSocket: WebSocket,
-                                        code: Int,
-                                        reason: String
-                                    ) {
-                                        webSocket.close(1000, "oh, I'm coming")
-                                    }
-                                }
-                                val webSocketReq =
-                                    client.newWebSocket(requestBuilder, webSocketListener)
-                                for (i in 1..20) {
-                                    //testAPIText.value=isRequestSuccessful.toString()
-                                    if (isRequestSuccessful) {
-                                        webSocketReq.close(1000, "oh, I'm coming")
-                                        mapTraceSingleData["Success"] = true
-                                        @Suppress("UNCHECKED_CAST")
-                                        val geoMap =
-                                            mapTraceSingleData["Geo"] as MutableMap<String, Any>
-                                        geoMap["ip"] = ""
-                                        geoMap["asnumber"] =
-                                            jsonData.getAsJsonPrimitive("asnumber").asString
-                                        geoMap["country"] =
-                                            jsonData.getAsJsonPrimitive("country").asString
-                                        geoMap["country_en"] =
-                                            jsonData.getAsJsonPrimitive("country_en").asString
-                                        geoMap["prov"] =
-                                            jsonData.getAsJsonPrimitive("prov").asString
-                                        geoMap["prov_en"] =
-                                            jsonData.getAsJsonPrimitive("prov_en").asString
-                                        geoMap["city"] =
-                                            jsonData.getAsJsonPrimitive("city").asString
-                                        geoMap["city_en"] =
-                                            jsonData.getAsJsonPrimitive("city_en").asString
-                                        geoMap["owner"] =
-                                            jsonData.getAsJsonPrimitive("owner").asString
-                                        geoMap["isp"] = jsonData.getAsJsonPrimitive("isp").asString
-                                        geoMap["domain"] =
-                                            jsonData.getAsJsonPrimitive("domain").asString
-                                        geoMap["whois"] =
-                                            jsonData.getAsJsonPrimitive("whois").asString
-                                        geoMap["country_en"] =
-                                            jsonData.getAsJsonPrimitive("country_en").asString
-                                        geoMap["lat"] = jsonData.getAsJsonPrimitive("lat").asDouble
-                                        geoMap["lng"] = jsonData.getAsJsonPrimitive("lng").asDouble
-                                        if (geoMap["lat"] == 0.0) {
-                                            geoMap["lat"] = 0
-                                        }
-                                        if (geoMap["lng"] == 0.0) {
-                                            geoMap["lng"] = 0
-                                        }
-                                        val mapTraceSingleDataList =
-                                            listOf(mapTraceSingleData)////,mapTraceSingleData,mapTraceSingleData)
-
-
-
-                                        traceMapMutex.withLock {
-                                            traceMapThreadsMapList.add(mapTraceSingleDataList)
-                                        }
-
-
-                                        threadMutex.withLock {
-                                            tracerouteThreadsIntList.indices.forEach { index ->
-                                                if (tracerouteThreadsIntList[index] == uniqueID) {
-                                                    tracerouteThreadsIntList[index] = 0
-                                                }
-                                            }
-                                            tracerouteThreadsIntList.add(0)
-                                        }
-                                        traceMapMutex.withLock {
-                                            traceMapThreadsIntList.indices.forEach { index ->
-                                                if (traceMapThreadsIntList[index] == uniqueID2) {
-                                                    traceMapThreadsIntList[index] = 0
-                                                }
-                                            }
-                                            traceMapThreadsIntList.add(0)
-                                        }
-                                        return@launch
-                                    }
-                                    delay(100)
-                                }
-                                if (!isRequestSuccessful) {
-                                    continue
-                                }
-
-
-                            } catch (e: Exception) {
-                                Log.e("MapHandler", e.printStackTrace().toString())
-                                delay(timeMillis = 200)
-                                continue
-                            }
-
-                            maxTriesOfAPIReq -= 1
-                            delay(timeMillis = 200)
-                        }
-
-
-
-
-
-
-
-
-
-                        threadMutex.withLock {
-                            tracerouteThreadsIntList.indices.forEach { index ->
-                                if (tracerouteThreadsIntList[index] == uniqueID) {
-                                    tracerouteThreadsIntList[index] = 0
-                                }
-                            }
-                            tracerouteThreadsIntList.add(0)
-                        }
-                        traceMapMutex.withLock {
-                            traceMapThreadsIntList.indices.forEach { index ->
-                                if (traceMapThreadsIntList[index] == uniqueID2) {
-                                    traceMapThreadsIntList[index] = 0
-                                }
-                            }
-                            traceMapThreadsIntList.add(0)
-                        }
-                    }
                 }
 
 
