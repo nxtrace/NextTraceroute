@@ -1016,10 +1016,10 @@ fun clearData(
     apiToken: MutableState<String>,
     preferredAPIIpPOW: MutableState<String>,
     apiDNSListPOW: MutableList<String>,
-    traceMapThreadsIntList: MutableList<Int>,
     traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
-    traceMapURL: MutableState<String>
+    traceMapURL: MutableState<String>,isAPIFinished:MutableState<Boolean>
 ) {
+    isAPIFinished.value=false
     traceMapURL.value = ""
     testAPIText.value = ""
     preferredAPIIp.value = ""
@@ -1030,7 +1030,6 @@ fun clearData(
     multipleIps.clear()
     nativePingCheckErrorText.value = ""
     insertErrorText.value = ""
-    traceMapThreadsIntList.clear()
     traceMapThreadsMapList.clear()
     singleHopCursor.forEach { i ->
         i.value = ""
@@ -1060,9 +1059,7 @@ fun MainColumn(
 ) {
 
     val threadMutex = Mutex()
-    val traceMapMutex = Mutex()
     val tracerouteThreadsIntList = remember { mutableStateListOf<Int>() }
-    val traceMapThreadsIntList = remember { mutableStateListOf<Int>() }
     val traceMapThreadsMapList = remember { mutableListOf<List<MutableMap<String, Any?>>>() }
     val traceMapURL = remember { mutableStateOf("") }
     val multipleIps = remember { mutableStateListOf<MutableState<String>>() }
@@ -1086,7 +1083,9 @@ fun MainColumn(
     val apiToken = remember { mutableStateOf("") }
     val preferredAPIIp = remember { mutableStateOf("") }
     val apiDNSList = remember { mutableListOf<String>() }
-    //val gridRows=remember{ mutableIntStateOf(255) }
+    val isAPIFinished  = remember { mutableStateOf(false) }
+
+
     val basicGridData = remember {
         mutableStateListOf(
             mutableStateListOf(
@@ -1133,33 +1132,9 @@ fun MainColumn(
                 testAPIText = testText, preferredAPIIp = preferredAPIIp,
                 apiDNSList = apiDNSList, preferredAPIIpPOW = preferredAPIIpPOW,
                 apiDNSListPOW = apiDNSListPOW,
-                apiToken = apiToken, traceMapThreadsIntList = traceMapThreadsIntList,
+                apiToken = apiToken,
                 traceMapThreadsMapList = traceMapThreadsMapList,
-                traceMapURL = traceMapURL
-            )
-            trHandler.APIPOWHandler(
-                scope = coroutineScope, threadMutex = threadMutex,
-                tracerouteThreadsIntList = tracerouteThreadsIntList,
-                tracerouteDNSServer = tracerouteDNSServer,
-                preferredAPIIp = preferredAPIIpPOW, //testAPIText = testText,
-                apiHostName = apiHostNamePOW,
-                apiDNSName = apiDNSNamePOW,
-                apiDNSList = apiDNSListPOW,
-                apiToken = apiToken,
-                currentDOHServer = currentDOHServer,
-                currentDNSMode = currentDNSMode
-            )
-            trHandler.APIDNSHandler(
-                scope = coroutineScope, threadMutex = threadMutex,
-                tracerouteThreadsIntList = tracerouteThreadsIntList,
-                tracerouteDNSServer = tracerouteDNSServer,
-                preferredAPIIp = preferredAPIIp, //testAPIText = testText,
-                apiHostName = apiHostName,
-                apiDNSName = apiDNSName,
-                apiDNSList = apiDNSList,
-                apiToken = apiToken,
-                currentDNSMode = currentDNSMode,
-                currentDOHServer = currentDOHServer
+                traceMapURL = traceMapURL, isAPIFinished = isAPIFinished
             )
             trHandler.testNativePing(
                 v4Status = isNativePing4Available,
@@ -1178,14 +1153,22 @@ fun MainColumn(
                 isDNSInProgress = isDNSInProgress,
                 //testAPIText = testText,
                 currentDOHServer = currentDOHServer,
-                currentDNSMode = currentDNSMode, traceMapMutex = traceMapMutex,
+                currentDNSMode = currentDNSMode,
                 isTraceMapEnabled = isTraceMapEnabled,
                 traceMapURL = traceMapURL,
                 preferredAPIIp = preferredAPIIp,
                 apiHostName = apiHostName,
-                traceMapThreadsIntList = traceMapThreadsIntList,
                 traceMapThreadsMapList = traceMapThreadsMapList,
-                isSearchBarEnabled = isSearchBarEnabled
+                isSearchBarEnabled = isSearchBarEnabled,
+                isAPIFinished = isAPIFinished,
+                apiToken = apiToken,
+                currentLanguage = currentLanguage,
+                apiDNSList = apiDNSList,
+                apiDNSListPOW = apiDNSListPOW,
+                apiDNSName = apiDNSName,
+                apiDNSNamePOW = apiDNSNamePOW,
+                apiHostNamePOW = apiHostNamePOW,
+                preferredAPIIpPOW = preferredAPIIpPOW
             )
             CheckThreadsStatus(
                 scope = coroutineScope,
@@ -1210,14 +1193,6 @@ fun MainColumn(
             timeout = traceTimeout,
             tracerouteDNSServer = tracerouteDNSServer,
             //testAPIText = testText,
-            preferredAPIIp = preferredAPIIp,
-            apiHostName = apiHostName,
-
-            apiToken = apiToken,
-            currentLanguage = currentLanguage,
-            traceMapThreadsIntList = traceMapThreadsIntList,
-            traceMapThreadsMapList = traceMapThreadsMapList,
-            traceMapMutex = traceMapMutex,
             currentDNSMode = currentDNSMode,
             currentDOHServer = currentDOHServer
         )
@@ -1262,6 +1237,7 @@ fun MainColumn(
         }
         if (testText.value != "") {
             Text(text = testText.value, color = DefaultBackgroundColorReverse)
+            //clipboardManager.setText(AnnotatedString(testText.value))
         }
         if (nativePingCheckErrorText.value != "") {
             Toast.makeText(context, nativePingCheckErrorText.value, Toast.LENGTH_LONG).show()
@@ -1313,6 +1289,7 @@ fun MainColumn(
                                 }.trim()
                             )
                         )
+                        Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ButtonEnabledColor,
@@ -1409,6 +1386,13 @@ fun MainColumn(
                                         detectTapGestures(
                                             onLongPress = {
                                                 clipboardManager.setText(AnnotatedString(item.value))
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Copied!",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
                                             },
                                             onTap = {
                                                 if (item.value != "*" && item.value != "") {
