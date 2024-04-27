@@ -17,6 +17,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+Disclaimer: The NextTrace API (hosted at nxtrace.org) used by default in this program is not managed by the program's developer.
+We do not guarantee the performance, accuracy, or any other aspect of the NextTrace API,
+nor do we endorse, approve, or guarantee the results returned by the NextTrace API. Users may customize the API server address themselves.
+
 This project uses the libraries listed below. Detailed information can be found in the LICENSE file of this project.
 The "dnsjava" library is licensed under the BSD 3-Clause License.
 The "seancfoley/IPAddress" library is licensed under the Apache 2.0 License.
@@ -333,6 +337,9 @@ fun AboutPage(currentPage: MutableState<String>) {
                     "You should have received a copy of the GNU General Public License\n" +
                     "along with this program in the LICENSE file.  If not, see <https://www.gnu.org/licenses/>.\n" +
                     "\n" +
+                    "Disclaimer: The NextTrace API (hosted at nxtrace.org) used by default in this program is not managed by the program's developer.\n" +
+                    "We do not guarantee the performance, accuracy, or any other aspect of the NextTrace API,\n" +
+                    "nor do we endorse, approve, or guarantee the results returned by the NextTrace API. Users may customize the API server address themselves.\n\n"+
                     "This project uses the libraries listed below. Detailed information can be found in the LICENSE file of this project.\n" +
                     "The \"dnsjava\" library is licensed under the BSD 3-Clause License.\n" +
                     "The \"seancfoley/IPAddress\" library is licensed under the Apache 2.0 License.\n" +
@@ -1310,12 +1317,12 @@ fun MainColumn(
         //test button
 //        Button(onClick = {
 //            gridDataList[0][0][0].value = "1"
-//            gridDataList[0][0][1].value = "114.114.514.81"
+//            gridDataList[0][0][1].value = "114.51.41.91"
 //            gridDataList[0][0][2].value = "AS114514"
-//            gridDataList[0][0][3].value = "[CDN77-peerlinks]"
-//            gridDataList[0][1][0].value = "中国 香港   cloudflare.com"
-//            gridDataList[0][2][0].value = "4.example.com"
-//            gridDataList[0][2][1].value = " 358.48 ms / 362.66 ms / 362.60 ms"
+//            gridDataList[0][0][3].value = "[EXAMPLE-peers]"
+//            gridDataList[0][1][0].value = "United States example.com"
+//            gridDataList[0][2][0].value = "123.example.com"
+//            gridDataList[0][2][1].value = " 123.45 ms / 234.56 ms / 345.67 ms"
 //
 //        }) {
 //            Text("Update")
