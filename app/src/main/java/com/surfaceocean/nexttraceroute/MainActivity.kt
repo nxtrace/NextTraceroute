@@ -114,8 +114,6 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -323,8 +321,8 @@ fun AboutPage(currentPage: MutableState<String>) {
     Column(modifier = Modifier.verticalScroll(scrollState)) {
         Text(
             color = DefaultBackgroundColorReverse,
-            text = "NextTraceroute version "+
-                    BuildConfig.VERSION_NAME +", an Android traceroute app using Nexttrace API\n"+
+            text = "NextTraceroute version " +
+                    BuildConfig.VERSION_NAME + ", an Android traceroute app using Nexttrace API\n" +
                     "Copyright (C) 2024 surfaceocean\n" +
                     "Email: r2qb8uc5@protonmail.com\n" +
                     "GitHub: https://github.com/nxtrace/NextTraceroute\n" +
@@ -343,7 +341,7 @@ fun AboutPage(currentPage: MutableState<String>) {
                     "\n" +
                     "Disclaimer: The NextTrace API (hosted at nxtrace.org) used by default in this program is not managed by the program's developer.\n" +
                     "We do not guarantee the performance, accuracy, or any other aspect of the NextTrace API,\n" +
-                    "nor do we endorse, approve, or guarantee the results returned by the NextTrace API. Users may customize the API server address themselves.\n\n"+
+                    "nor do we endorse, approve, or guarantee the results returned by the NextTrace API. Users may customize the API server address themselves.\n\n" +
                     "This project uses the libraries listed below. Detailed information can be found in the LICENSE file of this project.\n" +
                     "The \"dnsjava\" library is licensed under the BSD 3-Clause License.\n" +
                     "The \"seancfoley/IPAddress\" library is licensed under the Apache 2.0 License.\n" +
@@ -397,7 +395,12 @@ fun MyTopAppBar(
             ) {
                 DropdownMenuItem(
                     modifier = Modifier.background(DefaultBackgroundColor),
-                    text = { Text("Settings",color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray)},
+                    text = {
+                        Text(
+                            "Settings",
+                            color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray
+                        )
+                    },
                     onClick = {
                         showMenu = false
                         currentPage.value = "settings"
@@ -406,7 +409,12 @@ fun MyTopAppBar(
                 )
                 DropdownMenuItem(
                     modifier = Modifier.background(DefaultBackgroundColor),
-                    text = { Text("About",color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray) },
+                    text = {
+                        Text(
+                            "About",
+                            color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray
+                        )
+                    },
                     onClick = {
                         showMenu = false
                         currentPage.value = "about"
@@ -415,7 +423,12 @@ fun MyTopAppBar(
                 )
                 DropdownMenuItem(
                     modifier = Modifier.background(DefaultBackgroundColor),
-                    text = { Text("Privacy Policy",color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray) },
+                    text = {
+                        Text(
+                            "Privacy Policy",
+                            color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray
+                        )
+                    },
                     onClick = {
                         val privacyURL =
                             "https://github.com/nxtrace/NextTraceroute/blob/master/PrivacyPolicy.md"
@@ -839,7 +852,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("POW Hostname:", color = DefaultBackgroundColorReverse)
+            Text("POW HostName:", color = DefaultBackgroundColorReverse)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -866,9 +879,6 @@ fun SettingsColumn(
                 },
                 modifier = modifier
                     .fillMaxWidth()
-                    .semantics {
-                        contentDescription = "Input Value for POW Hostname: "+powHostNameText.value
-                    }
                     .heightIn(min = 20.dp)
             )
 
@@ -881,7 +891,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("POW DNS Name:", color = DefaultBackgroundColorReverse)
+            Text("POW DNSName:", color = DefaultBackgroundColorReverse)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -908,9 +918,6 @@ fun SettingsColumn(
                 },
                 modifier = modifier
                     .fillMaxWidth()
-                    .semantics {
-                        contentDescription = "Input Value for POW DNS Name: "+powDNSNameText.value
-                    }
                     .heightIn(min = 20.dp)
             )
 
@@ -925,7 +932,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("API Hostname:", color = DefaultBackgroundColorReverse)
+            Text("API HostName:", color = DefaultBackgroundColorReverse)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -952,9 +959,6 @@ fun SettingsColumn(
                 },
                 modifier = modifier
                     .fillMaxWidth()
-                    .semantics {
-                        contentDescription = "Input Value for API Hostname: "+apiHostNameText.value
-                    }
                     .heightIn(min = 20.dp)
             )
 
@@ -968,7 +972,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("API DNS Name:", color = DefaultBackgroundColorReverse)
+            Text("API DNSName:", color = DefaultBackgroundColorReverse)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -995,9 +999,6 @@ fun SettingsColumn(
                 },
                 modifier = modifier
                     .fillMaxWidth()
-                    .semantics {
-                        contentDescription = "Input Value for API DNS Name: "+apiDNSNameText.value
-                    }
                     .heightIn(min = 20.dp)
             )
 
