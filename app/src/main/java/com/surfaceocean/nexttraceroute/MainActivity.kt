@@ -925,7 +925,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("API Host Name:", color = DefaultBackgroundColorReverse)
+            Text("API Hostname:", color = DefaultBackgroundColorReverse)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
