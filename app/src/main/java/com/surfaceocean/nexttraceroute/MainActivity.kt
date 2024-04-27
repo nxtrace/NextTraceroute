@@ -315,8 +315,8 @@ fun AboutPage(currentPage: MutableState<String>) {
     Column(modifier = Modifier.verticalScroll(scrollState)) {
         Text(
             color = DefaultBackgroundColorReverse,
-            text = "NextTraceroute, an Android traceroute app using Nexttrace API version\n" +
-                    BuildConfig.VERSION_NAME +
+            text = "NextTraceroute version "+
+                    BuildConfig.VERSION_NAME +", an Android traceroute app using Nexttrace API\n"+
                     "Copyright (C) 2024 surfaceocean\n" +
                     "Email: r2qb8uc5@protonmail.com\n" +
                     "GitHub: https://github.com/nxtrace/NextTraceroute\n" +
