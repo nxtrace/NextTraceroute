@@ -867,7 +867,7 @@ fun SettingsColumn(
                 modifier = modifier
                     .fillMaxWidth()
                     .semantics {
-                        contentDescription = "Input Value for POW Hostname: by default origin-fallback.nxtrace.org"
+                        contentDescription = "Input Value for POW Hostname: "+powHostNameText.value
                     }
                     .heightIn(min = 20.dp)
             )
@@ -909,7 +909,7 @@ fun SettingsColumn(
                 modifier = modifier
                     .fillMaxWidth()
                     .semantics {
-                        contentDescription = "Input Value for POW DNS Name: by default api.nxtrace.org"
+                        contentDescription = "Input Value for POW DNS Name: "+powDNSNameText.value
                     }
                     .heightIn(min = 20.dp)
             )
@@ -953,7 +953,7 @@ fun SettingsColumn(
                 modifier = modifier
                     .fillMaxWidth()
                     .semantics {
-                        contentDescription = "Input Value for API Hostname: by default origin-fallback.nxtrace.org"
+                        contentDescription = "Input Value for API Hostname: "+apiHostNameText.value
                     }
                     .heightIn(min = 20.dp)
             )
@@ -996,7 +996,7 @@ fun SettingsColumn(
                 modifier = modifier
                     .fillMaxWidth()
                     .semantics {
-                        contentDescription = "Input Value for API DNS Name: by default api.nxtrace.org"
+                        contentDescription = "Input Value for API DNS Name: "+apiDNSNameText.value
                     }
                     .heightIn(min = 20.dp)
             )
