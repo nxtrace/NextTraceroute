@@ -220,14 +220,19 @@ class TracerouteHandler {
 
 
     @Composable
-    fun MainWSHandler(threadMutex: Mutex, tracerouteThreadsIntList: MutableList<Int>, scope: CoroutineScope,
-                      apiHostName: MutableState<String>, preferredAPIIp: MutableState<String>, apiToken: MutableState<String>,
-                      gridDataList: MutableList<MutableList<MutableList<MutableState<String>>>>,
-                      currentLanguage: MutableState<String>,
-                      traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
-                      insertion:MutableState<String>, //testAPIText:MutableState<String>,
-                      isAPIFinished:MutableState<Boolean>,
-                      ){
+    fun MainWSHandler(
+        threadMutex: Mutex,
+        tracerouteThreadsIntList: MutableList<Int>,
+        scope: CoroutineScope,
+        apiHostName: MutableState<String>,
+        preferredAPIIp: MutableState<String>,
+        apiToken: MutableState<String>,
+        gridDataList: MutableList<MutableList<MutableList<MutableState<String>>>>,
+        currentLanguage: MutableState<String>,
+        traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
+        insertion: MutableState<String>, //testAPIText: MutableState<String>,
+        isAPIFinished: MutableState<Boolean>,
+    ) {
         LaunchedEffect(Unit) {
             scope.launch(Dispatchers.IO) {
                 //ggbang
@@ -235,15 +240,17 @@ class TracerouteHandler {
                 threadMutex.withLock {
                     tracerouteThreadsIntList.add(uniqueID)
                 }
-                var maxBootRetries=40
-                while(maxBootRetries>=0){
+                var maxBootRetries = 40
+                while (maxBootRetries >= 0) {
                     delay(timeMillis = 500)
-                    if(apiToken.value!="" && preferredAPIIp.value!=""){
+                    if (apiToken.value != "" && preferredAPIIp.value != "") {
                         break
                     }
-                    maxBootRetries-=1
+                    maxBootRetries -= 1
                 }
-                if(maxBootRetries<0){
+
+                if (maxBootRetries < 0) {
+                    isAPIFinished.value = true
                     threadMutex.withLock {
                         tracerouteThreadsIntList.indices.forEach { index ->
                             if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -255,14 +262,14 @@ class TracerouteHandler {
                     return@launch
                 }
 
-                val wsTempDataMap:MutableMap<String, Any> = mutableMapOf(
+                val wsTempDataMap: MutableMap<String, Any> = mutableMapOf(
                     "currentIP" to "",
                     "currentIndex" to 114514,
                     "isApiSuccessful" to false
                 )
                 var maxReconnects = 5
-                while(maxReconnects>0){
-                    try{
+                while (maxReconnects > 0) {
+                    try {
                         val currentLocale = Locale.getDefault()
                         val isChinese = currentLocale.language.startsWith("zh")
                         var jsonData: JsonObject
@@ -275,7 +282,7 @@ class TracerouteHandler {
                             .connectTimeout(5, TimeUnit.SECONDS)
                             .readTimeout(5, TimeUnit.SECONDS)
                             .writeTimeout(5, TimeUnit.SECONDS)
-                            .pingInterval(5,TimeUnit.SECONDS)
+                            .pingInterval(5, TimeUnit.SECONDS)
                             .dns(customDns)
                             .build()
                         val getAPIHeaders = mapOf(
@@ -326,9 +333,12 @@ class TracerouteHandler {
                                     }
                                     val mapTraceSingleData = mutableMapOf(
                                         "Success" to true,
-                                        "Address" to mapOf("IP" to wsTempDataMap["currentIP"].toString(), "zone" to ""),
+                                        "Address" to mapOf(
+                                            "IP" to wsTempDataMap["currentIP"].toString(),
+                                            "zone" to ""
+                                        ),
                                         "Hostname" to "",
-                                        "TTL" to (wsTempDataMap["currentIndex"] as Int) +1,
+                                        "TTL" to (wsTempDataMap["currentIndex"] as Int) + 1,
                                         //"RTT" to 114514,
                                         "Error" to null,
                                         "Geo" to mutableMapOf(
@@ -345,8 +355,16 @@ class TracerouteHandler {
                                             "isp" to jsonData.getAsJsonPrimitive("isp").asString,
                                             "domain" to jsonData.getAsJsonPrimitive("domain").asString,
                                             "whois" to jsonData.getAsJsonPrimitive("whois").asString,
-                                            "lat" to (if (jsonData.getAsJsonPrimitive("lat").asDouble == 0.0){0}else{jsonData.getAsJsonPrimitive("lat").asDouble}),
-                                            "lng" to (if (jsonData.getAsJsonPrimitive("lng").asDouble == 0.0){0}else{jsonData.getAsJsonPrimitive("lng").asDouble}),
+                                            "lat" to (if (jsonData.getAsJsonPrimitive("lat").asDouble == 0.0) {
+                                                0
+                                            } else {
+                                                jsonData.getAsJsonPrimitive("lat").asDouble
+                                            }),
+                                            "lng" to (if (jsonData.getAsJsonPrimitive("lng").asDouble == 0.0) {
+                                                0
+                                            } else {
+                                                jsonData.getAsJsonPrimitive("lng").asDouble
+                                            }),
                                             "prefix" to "",
                                             "router" to mapOf<Any, Any>(),
                                             "source" to ""
@@ -363,66 +381,65 @@ class TracerouteHandler {
                         }
 
                         val webSocketReq = client.newWebSocket(requestBuilder, webSocketListener)
-
-                        var targetCursor=114514
-                        var stopSignal=false
-                        while (!stopSignal){
+                        delay(timeMillis = 2000)
+                        var targetCursor = 114514
+                        var stopSignal = false
+                        while (!stopSignal) {
                             delay(timeMillis = 200)
 
-                            var notFinishedCursor=1919810
-                            for((index,item) in gridDataList.withIndex()){
+                            var notFinishedCursor = 1919810
+                            for ((index, item) in gridDataList.withIndex()) {
 
-                                if(item[0][1].value!="*"&&item[0][1].value!=""&&item[0][2].value!="*"){
+                                if (item[0][1].value != "*" && item[0][1].value != "" && item[0][2].value != "*") {
                                     var maxAPIRetries = 10
-                                    wsTempDataMap["currentIP"]=item[0][1].value
-                                    wsTempDataMap["currentIndex"]=index
-                                    wsTempDataMap["isApiSuccessful"]=false
+                                    wsTempDataMap["currentIP"] = item[0][1].value
+                                    wsTempDataMap["currentIndex"] = index
+                                    wsTempDataMap["isApiSuccessful"] = false
                                     webSocketReq.send(wsTempDataMap["currentIP"] as String)
-                                    while(maxAPIRetries>0){
+                                    while (maxAPIRetries > 0) {
                                         delay(timeMillis = 200)
                                         //testAPIText.value=item[0][1].value+wsTempDataMap["currentIP"].toString()+" "+wsTempDataMap["currentIndex"].toString()+" "+wsTempDataMap["isApiSuccessful"].toString()+" "+System.currentTimeMillis().toString()
-                                        if(wsTempDataMap["isApiSuccessful"]==true){
-                                            wsTempDataMap["currentIP"]=""
-                                            wsTempDataMap["currentIndex"]=114514
-                                            wsTempDataMap["isApiSuccessful"]=false
+                                        if (wsTempDataMap["isApiSuccessful"] == true) {
+                                            wsTempDataMap["currentIP"] = ""
+                                            wsTempDataMap["currentIndex"] = 114514
+                                            wsTempDataMap["isApiSuccessful"] = false
                                             break
                                         }
-                                        maxAPIRetries-=1
+                                        maxAPIRetries -= 1
                                     }
-                                    if(maxAPIRetries<=0){
-                                        item[0][2].value="*"
-                                        wsTempDataMap["currentIP"]=""
-                                        wsTempDataMap["currentIndex"]=114514
-                                        wsTempDataMap["isApiSuccessful"]=false
+                                    if (maxAPIRetries <= 0) {
+                                        item[0][2].value = "*"
+                                        wsTempDataMap["currentIP"] = ""
+                                        wsTempDataMap["currentIndex"] = 114514
+                                        wsTempDataMap["isApiSuccessful"] = false
                                     }
 
                                 }
 
 
 
-                                if(item[0][1].value==insertion.value){
-                                    targetCursor=index
+                                if (item[0][1].value == insertion.value) {
+                                    targetCursor = index
                                 }
-                                if(item[0][1].value=="" ||(item[0][1].value!="" && item[0][1].value!="*" && item[0][2].value=="")){
-                                    if(index<notFinishedCursor){
-                                        notFinishedCursor=index
+                                if (item[0][1].value == "" || (item[0][1].value != "" && item[0][1].value != "*" && item[0][2].value == "")) {
+                                    if (index < notFinishedCursor) {
+                                        notFinishedCursor = index
                                     }
 
                                 }
                             }
                             //testAPItext.value=wsTempDataMap["currentIP"]as String+" "+notFinishedCursor.toString()+" "+targetCursor.toString()+ "  " + System.currentTimeMillis().toString()
-                            if(notFinishedCursor>targetCursor){
-                                webSocketReq.close(1000,"oh, I'm coming")
-                                stopSignal=true
-                                maxReconnects=0
-                                isAPIFinished.value=true
+                            if (notFinishedCursor > targetCursor) {
+                                webSocketReq.close(1000, "oh, I'm coming")
+                                stopSignal = true
+                                maxReconnects = 0
+                                isAPIFinished.value = true
                             }
                         }
 
 
-
-                    }catch(e:Exception){
-                        maxReconnects-=1
+                    } catch (e: Exception) {
+                        maxReconnects -= 1
                         delay(timeMillis = 1000)
                         continue
 
@@ -430,7 +447,7 @@ class TracerouteHandler {
                 }
 
 
-                isAPIFinished.value=true
+                isAPIFinished.value = true
                 threadMutex.withLock {
                     tracerouteThreadsIntList.indices.forEach { index ->
                         if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -607,7 +624,8 @@ class TracerouteHandler {
 
 
     @Composable
-    fun APIPOWHandler(//testAPIText: MutableState<String>,
+    fun APIPOWHandler(
+        testAPIText: MutableState<String>,
         threadMutex: Mutex, tracerouteThreadsIntList: MutableList<Int>, scope: CoroutineScope,
         tracerouteDNSServer: MutableState<String>,
         apiHostNamePOW: MutableState<String>, apiDNSNamePOW: MutableState<String>,
@@ -711,6 +729,7 @@ class TracerouteHandler {
                                     val getPOWCall = client.newCall(requestBuilder).execute()
                                     val getPOWData = getPOWCall.body?.string() ?: ""
                                     if (getPOWCall.isSuccessful) {
+                                        testAPIText.value = ""
                                         if (getPOWData != "") {
                                             try {
                                                 val getPOWJsonElement =
@@ -776,8 +795,8 @@ class TracerouteHandler {
                                                     client.newCall(submitBuilder).execute()
                                                 val submitPOWData =
                                                     submitPOWCall.body?.string() ?: ""
-                                                //testAPIText.value=submitPOWAnswerJson.toString()
                                                 if (submitPOWCall.isSuccessful) {
+                                                    testAPIText.value = ""
                                                     if (submitPOWData != "") {
                                                         val submitPOWJsonElement =
                                                             JsonParser.parseString(submitPOWData).asJsonObject
@@ -802,6 +821,7 @@ class TracerouteHandler {
                                                         continue
                                                     }
                                                 } else {
+                                                    testAPIText.value = submitPOWData
                                                     delay(500)
                                                     continue
                                                 }
@@ -820,6 +840,7 @@ class TracerouteHandler {
                                         }
 
                                     } else {
+                                        testAPIText.value = getPOWData
                                         delay(500)
                                         continue
                                     }
@@ -835,6 +856,7 @@ class TracerouteHandler {
                             maxTriesOfAPIDNS -= 1
                             delay(timeMillis = 500)
                         }
+                        maxTriesOfAPIDNS -= 1
                         delay(timeMillis = 500)
                     }
 
@@ -857,29 +879,39 @@ class TracerouteHandler {
 
     @Composable
     fun InsertHandler(
-        threadMutex: Mutex, tracerouteThreadsIntList: MutableList<Int>,
+        threadMutex: Mutex,
+        tracerouteThreadsIntList: MutableList<Int>,
         insertion: MutableState<String>,
         insertErrorText: MutableState<String>,
         gridDataList: MutableList<MutableList<MutableList<MutableState<String>>>>,
-        scope: CoroutineScope, tracerouteDNSServer: MutableState<String>,
-        count: MutableState<String>, maxTTL: MutableIntState, timeout: MutableState<String>,
+        scope: CoroutineScope,
+        tracerouteDNSServer: MutableState<String>,
+        count: MutableState<String>,
+        maxTTL: MutableIntState,
+        timeout: MutableState<String>,
         multipleIps: MutableList<MutableState<String>>,
         context: Context,
-        isDNSInProgress: MutableState<Boolean>, //testAPIText: MutableState<String>,
+        isDNSInProgress: MutableState<Boolean>, testAPIText: MutableState<String>,
         currentDOHServer: MutableState<String>,
-        currentDNSMode: MutableState<String>, isTraceMapEnabled: MutableState<Boolean>,
+        currentDNSMode: MutableState<String>,
+        isTraceMapEnabled: MutableState<Boolean>,
         traceMapURL: MutableState<String>,
         apiHostName: MutableState<String>,
         preferredAPIIp: MutableState<String>,
         traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
         isSearchBarEnabled: MutableState<Boolean>,
-        isAPIFinished: MutableState<Boolean>,apiToken: MutableState<String>,currentLanguage: MutableState<String>,
-        apiHostNamePOW: MutableState<String>, apiDNSNamePOW: MutableState<String>,
-        preferredAPIIpPOW: MutableState<String>, apiDNSListPOW: MutableList<String>,
-        apiDNSList: MutableList<String>,apiDNSName: MutableState<String>,
+        isAPIFinished: MutableState<Boolean>,
+        apiToken: MutableState<String>,
+        currentLanguage: MutableState<String>,
+        apiHostNamePOW: MutableState<String>,
+        apiDNSNamePOW: MutableState<String>,
+        preferredAPIIpPOW: MutableState<String>,
+        apiDNSListPOW: MutableList<String>,
+        apiDNSList: MutableList<String>,
+        apiDNSName: MutableState<String>,
 
 
-    ) {
+        ) {
 
         val inputType = remember { mutableStateOf("") }
 
@@ -985,15 +1017,15 @@ class TracerouteHandler {
                     var maxTriesDNS = 20
                     while (maxTriesDNS >= 0) {
                         //testAPIText.value=maxTriesDNS.toString()
-                        threadMutex.withLock{
+                        threadMutex.withLock {
                             if (dnsThreadsList.all { it == 0 }) {
                                 isDNSInProgress.value = false
                             }
                         }
-                        if(!isDNSInProgress.value){
+                        if (!isDNSInProgress.value) {
                             break
                         }
-                        delay(timeMillis =500)
+                        delay(timeMillis = 500)
                         maxTriesDNS -= 1
                     }
                     isDNSInProgress.value = false
@@ -1054,11 +1086,11 @@ class TracerouteHandler {
             }
 
             //api handler
-           APIPOWHandler(
+            APIPOWHandler(
                 scope = scope, threadMutex = threadMutex,
                 tracerouteThreadsIntList = tracerouteThreadsIntList,
                 tracerouteDNSServer = tracerouteDNSServer,
-                preferredAPIIpPOW = preferredAPIIpPOW, //testAPIText = testText,
+                preferredAPIIpPOW = preferredAPIIpPOW, testAPIText = testAPIText,
                 apiHostNamePOW = apiHostNamePOW,
                 apiDNSNamePOW = apiDNSNamePOW,
                 apiDNSListPOW = apiDNSListPOW,
@@ -1080,12 +1112,19 @@ class TracerouteHandler {
             )
 
 
-            MainWSHandler(threadMutex=threadMutex, tracerouteThreadsIntList=tracerouteThreadsIntList, scope=scope,
-                apiHostName=apiHostName,preferredAPIIp=preferredAPIIp,apiToken=apiToken,
-                gridDataList=gridDataList,
-                currentLanguage=currentLanguage,
-                traceMapThreadsMapList=traceMapThreadsMapList, isAPIFinished = isAPIFinished,
-                insertion=insertion
+            MainWSHandler(
+                threadMutex = threadMutex,
+                tracerouteThreadsIntList = tracerouteThreadsIntList,
+                scope = scope,
+                apiHostName = apiHostName,
+                preferredAPIIp = preferredAPIIp,
+                apiToken = apiToken,
+                gridDataList = gridDataList,
+                currentLanguage = currentLanguage,
+                traceMapThreadsMapList = traceMapThreadsMapList,
+                isAPIFinished = isAPIFinished,
+                insertion = insertion,
+                //testAPIText = testAPIText
             )
 
 
@@ -1097,9 +1136,9 @@ class TracerouteHandler {
                         threadMutex.withLock { tracerouteThreadsIntList.add(uniqueID) }
 
 
-                        while(true){
+                        while (true) {
                             delay(timeMillis = 500)
-                            if(isAPIFinished.value){
+                            if (isAPIFinished.value) {
                                 break
                             }
                         }
@@ -1116,15 +1155,15 @@ class TracerouteHandler {
                             }
                             return@launch
                         }
-                        val tempList= mutableListOf<List<MutableMap<String, Any?>>>()
-                        for(i in traceMapThreadsMapList){
-                            var isDuplicate =false
-                            for(j in tempList){
-                                if(i[0]["Address"]==j[0]["Address"]){
-                                    isDuplicate=true
+                        val tempList = mutableListOf<List<MutableMap<String, Any?>>>()
+                        for (i in traceMapThreadsMapList) {
+                            var isDuplicate = false
+                            for (j in tempList) {
+                                if (i[0]["Address"] == j[0]["Address"]) {
+                                    isDuplicate = true
                                 }
                             }
-                            if(!isDuplicate){
+                            if (!isDuplicate) {
                                 tempList.add(i)
                             }
                         }

@@ -315,7 +315,8 @@ fun AboutPage(currentPage: MutableState<String>) {
     Column(modifier = Modifier.verticalScroll(scrollState)) {
         Text(
             color = DefaultBackgroundColorReverse,
-            text = "NextTraceroute, an Android traceroute app using Nexttrace API\n" +
+            text = "NextTraceroute, an Android traceroute app using Nexttrace API version\n" +
+                    BuildConfig.VERSION_NAME +
                     "Copyright (C) 2024 surfaceocean\n" +
                     "Email: r2qb8uc5@protonmail.com\n" +
                     "GitHub: https://github.com/nxtrace/NextTraceroute\n" +
@@ -1017,9 +1018,9 @@ fun clearData(
     preferredAPIIpPOW: MutableState<String>,
     apiDNSListPOW: MutableList<String>,
     traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
-    traceMapURL: MutableState<String>,isAPIFinished:MutableState<Boolean>
+    traceMapURL: MutableState<String>, isAPIFinished: MutableState<Boolean>
 ) {
-    isAPIFinished.value=false
+    isAPIFinished.value = false
     traceMapURL.value = ""
     testAPIText.value = ""
     preferredAPIIp.value = ""
@@ -1083,7 +1084,7 @@ fun MainColumn(
     val apiToken = remember { mutableStateOf("") }
     val preferredAPIIp = remember { mutableStateOf("") }
     val apiDNSList = remember { mutableListOf<String>() }
-    val isAPIFinished  = remember { mutableStateOf(false) }
+    val isAPIFinished = remember { mutableStateOf(false) }
 
 
     val basicGridData = remember {
@@ -1151,7 +1152,7 @@ fun MainColumn(
                 multipleIps = multipleIps,
                 tracerouteDNSServer = tracerouteDNSServer, context = context,
                 isDNSInProgress = isDNSInProgress,
-                //testAPIText = testText,
+                testAPIText = testText,
                 currentDOHServer = currentDOHServer,
                 currentDNSMode = currentDNSMode,
                 isTraceMapEnabled = isTraceMapEnabled,
@@ -1303,7 +1304,8 @@ fun MainColumn(
             }
         }
         //test text
-//        var testtest: MutableList<Int> = tracerouteThreadsIntList.toMutableStateList()
+
+//        val testtest: MutableList<Int> = tracerouteThreadsIntList.toMutableStateList()
 //        Text(text = testtest.toList().toString(), color = DefaultBackgroundColorReverse)
         //test button
 //        Button(onClick = {
@@ -1321,22 +1323,30 @@ fun MainColumn(
         //Select a ip and change
 
         if (multipleIps.size != 0 && tracerouteThreadsIntList.none { it != 0 }) {
-            for (i in multipleIps) {
-                Button(
-                    onClick = {
-                        searchText.value = i.value
-                        multipleIps.clear()
-                        isButtonClicked.value = true
+            LazyColumn(
+                modifier = Modifier
+                    .border(1.dp, DefaultBackgroundColorReverse)
+                    .fillMaxWidth()
+            ) {
+                items(multipleIps.size) { multipleIPsIndex ->
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Button(
+                            onClick = {
+                                searchText.value = multipleIps[multipleIPsIndex].value
+                                multipleIps.clear()
+                                isButtonClicked.value = true
 
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = ButtonEnabledColor,
-                        contentColor = DefaultBackgroundColor,
-                        disabledContainerColor = Color.Gray,
-                        disabledContentColor = Color.LightGray
-                    )
-                ) {
-                    Text(i.value)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = ButtonEnabledColor,
+                                contentColor = DefaultBackgroundColor,
+                                disabledContainerColor = Color.Gray,
+                                disabledContentColor = Color.LightGray
+                            )
+                        ) {
+                            Text(multipleIps[multipleIPsIndex].value)
+                        }
+                    }
                 }
             }
         }
