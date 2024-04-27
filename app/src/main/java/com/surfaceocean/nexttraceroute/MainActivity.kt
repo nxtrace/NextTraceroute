@@ -47,6 +47,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -113,6 +114,8 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -257,7 +260,8 @@ class MainActivity : ComponentActivity() {
                             "main" -> {
                                 MyTopAppBar(
                                     currentPage = currentPage,
-                                    isSearchBarEnabled = isSearchBarEnabled
+                                    isSearchBarEnabled = isSearchBarEnabled,
+                                    context = context
                                 )
                                 MainColumn(
                                     isSearchBarEnabled = isSearchBarEnabled,
@@ -358,7 +362,8 @@ fun AboutPage(currentPage: MutableState<String>) {
 fun MyTopAppBar(
     modifier: Modifier = Modifier,
     currentPage: MutableState<String>,
-    isSearchBarEnabled: MutableState<Boolean>
+    isSearchBarEnabled: MutableState<Boolean>,
+    context: Context
 ) {
     var showMenu by remember { mutableStateOf(false) }
     TopAppBar(
@@ -391,7 +396,8 @@ fun MyTopAppBar(
                 onDismissRequest = { showMenu = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("Settings") },
+                    modifier = Modifier.background(DefaultBackgroundColor),
+                    text = { Text("Settings",color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray)},
                     onClick = {
                         showMenu = false
                         currentPage.value = "settings"
@@ -399,10 +405,26 @@ fun MyTopAppBar(
                     enabled = isSearchBarEnabled.value
                 )
                 DropdownMenuItem(
-                    text = { Text("About") },
+                    modifier = Modifier.background(DefaultBackgroundColor),
+                    text = { Text("About",color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray) },
                     onClick = {
                         showMenu = false
                         currentPage.value = "about"
+                    },
+                    enabled = isSearchBarEnabled.value
+                )
+                DropdownMenuItem(
+                    modifier = Modifier.background(DefaultBackgroundColor),
+                    text = { Text("Privacy Policy",color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray) },
+                    onClick = {
+                        val privacyURL =
+                            "https://github.com/nxtrace/NextTraceroute/blob/master/PrivacyPolicy.md"
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(privacyURL)
+                            )
+                        )
                     },
                     enabled = isSearchBarEnabled.value
                 )
@@ -844,6 +866,9 @@ fun SettingsColumn(
                 },
                 modifier = modifier
                     .fillMaxWidth()
+                    .semantics {
+                        contentDescription = "Input Value for POW Hostname: by default origin-fallback.nxtrace.org"
+                    }
                     .heightIn(min = 20.dp)
             )
 
@@ -883,6 +908,9 @@ fun SettingsColumn(
                 },
                 modifier = modifier
                     .fillMaxWidth()
+                    .semantics {
+                        contentDescription = "Input Value for POW DNS Name: by default api.nxtrace.org"
+                    }
                     .heightIn(min = 20.dp)
             )
 
@@ -924,6 +952,9 @@ fun SettingsColumn(
                 },
                 modifier = modifier
                     .fillMaxWidth()
+                    .semantics {
+                        contentDescription = "Input Value for API Hostname: by default origin-fallback.nxtrace.org"
+                    }
                     .heightIn(min = 20.dp)
             )
 
@@ -964,6 +995,9 @@ fun SettingsColumn(
                 },
                 modifier = modifier
                     .fillMaxWidth()
+                    .semantics {
+                        contentDescription = "Input Value for API DNS Name: by default api.nxtrace.org"
+                    }
                     .heightIn(min = 20.dp)
             )
 
@@ -1480,6 +1514,7 @@ fun SearchBar(
             }
         ),
         singleLine = true,
+        textStyle = TextStyle(color = DefaultBackgroundColorReverse),
         value = onSearchResults.value,
         //search bar can only clicked again if everything is done
         onValueChange = {
