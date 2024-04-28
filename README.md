@@ -12,9 +12,15 @@ Enter target address (IPv4, IPv6, Hostname and URL), press run, and enjoy!
 
 支持IPv4、IPv6、域名输入和URL提取域名，点击运行。
 
-# Telegram channel
+# Contact
 
-[Click Here](https://t.me/nexttraceroute)
+The following are all the social media and contact methods of the main maintainer of this project：
+
+以下为本项目主要维护者的所有社交媒体及联系方式：
+
+[r2qb8uc5@protonmail.com](mailto:r2qb8uc5@protonmail.com)
+
+[Telegram channel](https://t.me/nexttraceroute)
 
 # Example Screenshot
 ![example1](./pic/1.png)
