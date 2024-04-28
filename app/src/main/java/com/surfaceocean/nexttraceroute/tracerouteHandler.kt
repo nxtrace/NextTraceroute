@@ -945,7 +945,12 @@ class TracerouteHandler {
                             }
                         } else {
                             item[0][0].value = (index + 1).toString()
-                            item[0][1].value = traceroute4RegexResult
+                            if(traceroute4RegexResult!=""){
+                                item[0][1].value = traceroute4RegexResult
+                            }else{
+                                item[0][1].value = "*"
+                            }
+
                         }
                         nativeStatus[index].intValue = 1
                         threadMutex.withLock {
@@ -983,7 +988,12 @@ class TracerouteHandler {
                             }
                         } else {
                             item[0][0].value = (index + 1).toString()
-                            item[0][1].value = traceroute6RegexResult
+                            if(traceroute6RegexResult!=""){
+                                item[0][1].value = traceroute6RegexResult
+                            }else{
+                                item[0][1].value = "*"
+                            }
+
                         }
                         nativeStatus[index].intValue = 1
                         threadMutex.withLock {
@@ -1991,7 +2001,12 @@ class TracerouteHandler {
                                 count = count.value, timeout = timeout.value
                             )
                             val ping4RegexResult = extractRttValues(ping4Result)
-                            item[2][1].value = ping4RegexResult
+                            if(ping4RegexResult!=""){
+                                item[2][1].value = ping4RegexResult
+                            }else{
+                                item[2][1].value = "*"
+                            }
+
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -2163,7 +2178,11 @@ class TracerouteHandler {
                                 count = count.value, timeout = timeout.value
                             )
                             val ping6RegexResult = extractRttValues(ping6Result)
-                            item[2][1].value = ping6RegexResult
+                            if(ping6RegexResult!=""){
+                                item[2][1].value = ping6RegexResult
+                            }else{
+                                item[2][1].value = "*"
+                            }
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
