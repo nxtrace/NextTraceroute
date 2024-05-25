@@ -98,7 +98,7 @@ class TracerouteHandler {
             val process = Runtime.getRuntime().exec("ping")
             process.waitFor()
         } catch (e: Exception) {
-            Log.e("testNativePing", e.printStackTrace().toString())
+            Log.e("testNativePing", "",e)
             v4Status.value = false
         }
         try {
@@ -106,7 +106,7 @@ class TracerouteHandler {
             process6.waitFor()
 
         } catch (e: Exception) {
-            Log.e("testNativePing", e.printStackTrace().toString())
+            Log.e("testNativePing","",e)
             v6Status.value = false
         }
         if (v4Status.value && v6Status.value) {
@@ -443,6 +443,7 @@ class TracerouteHandler {
 
 
                     } catch (e: Exception) {
+                        Log.e("mainWSHandler","",e)
                         maxReconnects -= 1
                         delay(timeMillis = 1000)
                         continue
@@ -598,7 +599,7 @@ class TracerouteHandler {
 
 
                                 } catch (e: Exception) {
-                                    Log.e("APIDNSHandler", e.printStackTrace().toString())
+                                    Log.e("APIDNSHandler", "",e)
                                     delay(timeMillis = 200)
                                     continue
                                 }
@@ -829,10 +830,10 @@ class TracerouteHandler {
                                                     delay(500)
                                                     continue
                                                 }
-                                            } catch (e2: Exception) {
+                                            } catch (e: Exception) {
                                                 Log.e(
                                                     "APIPowHandler",
-                                                    e2.printStackTrace().toString()
+                                                    "",e
                                                 )
                                                 continue
                                             }
@@ -851,7 +852,7 @@ class TracerouteHandler {
 
 
                                 } catch (e: Exception) {
-                                    Log.e("APIPowHandler", e.printStackTrace().toString())
+                                    Log.e("APIPowHandler", "",e)
                                     delay(200)
                                     continue
                                 }
@@ -1227,8 +1228,8 @@ class TracerouteHandler {
                                 }
                             }
                             submitTraceMapCall.close()
-                        } catch (e2: Exception) {
-                            Log.e("APIPowHandler", e2.printStackTrace().toString())
+                        } catch (e: Exception) {
+                            Log.e("InsertHandler", "",e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1345,8 +1346,8 @@ class TracerouteHandler {
                             }
 
 
-                        } catch (e2: Exception) {
-                            Log.e("ResolveHandler", e2.printStackTrace().toString())
+                        } catch (e: Exception) {
+                            Log.e("ResolveHandler", "",e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1404,7 +1405,7 @@ class TracerouteHandler {
                                 }
                             }
                         } catch (e: Exception) {
-                            Log.e("ResolveHandler", e.printStackTrace().toString())
+                            Log.e("ResolveHandler","",e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1495,8 +1496,8 @@ class TracerouteHandler {
                             }
 
 
-                        } catch (e2: Exception) {
-                            Log.e("ResolveHandler", e2.printStackTrace().toString())
+                        } catch (e: Exception) {
+                            Log.e("ResolveHandler", "",e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1556,7 +1557,7 @@ class TracerouteHandler {
                                 }
                             }
                         } catch (e: Exception) {
-                            Log.e("eachHopHandler", e.printStackTrace().toString())
+                            Log.e("ResolveHandler","",e)
 
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
@@ -1697,7 +1698,7 @@ class TracerouteHandler {
                                                 } catch (e: Exception) {
                                                     Log.e(
                                                         "ResolveHandlerDOHCNAMEA",
-                                                        e.printStackTrace().toString()
+                                                        "",e
                                                     )
                                                 }
                                                 try {
@@ -1774,7 +1775,7 @@ class TracerouteHandler {
                                                 } catch (e: Exception) {
                                                     Log.e(
                                                         "RHandlerDOHCNAMEAAAA",
-                                                        e.printStackTrace().toString()
+                                                        "",e
                                                     )
                                                 }
 
@@ -1789,7 +1790,7 @@ class TracerouteHandler {
 
 
                         } catch (e: Exception) {
-                            Log.e("ResolveHandler", e.printStackTrace().toString())
+                            Log.e("ResolveHandler", "",e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1875,7 +1876,7 @@ class TracerouteHandler {
                                             } catch (e: Exception) {
                                                 Log.e(
                                                     "RHandlerCNAMEA",
-                                                    e.printStackTrace().toString()
+                                                    "",e
                                                 )
                                             }
                                             try {
@@ -1924,7 +1925,7 @@ class TracerouteHandler {
                                             } catch (e: Exception) {
                                                 Log.e(
                                                     "RHandlerCNAMEAAAA",
-                                                    e.printStackTrace().toString()
+                                                    "",e
                                                 )
                                             }
 
@@ -1935,7 +1936,7 @@ class TracerouteHandler {
 
 
                         } catch (e: Exception) {
-                            Log.e("eachHopHandler", e.printStackTrace().toString())
+                            Log.e("ResolveHandler","",e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -2080,8 +2081,8 @@ class TracerouteHandler {
                                         }
 
 
-                                    } catch (e2: Exception) {
-                                        Log.e("eachHopHandler", e2.printStackTrace().toString())
+                                    } catch (e: Exception) {
+                                        Log.e("eachHopHandler", "",e)
                                         threadMutex.withLock {
                                             tracerouteThreadsIntList.indices.forEach { index ->
                                                 if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -2133,7 +2134,7 @@ class TracerouteHandler {
                                         }
                                     }
                                 } catch (e: Exception) {
-                                    Log.e("eachHopHandler", e.printStackTrace().toString())
+                                    Log.e("eachHopHandler", "",e)
                                     item[2][0].value = "*"
                                     threadMutex.withLock {
                                         tracerouteThreadsIntList.indices.forEach { index ->
@@ -2258,8 +2259,8 @@ class TracerouteHandler {
                                         }
 
 
-                                    } catch (e2: Exception) {
-                                        Log.e("eachHopHandler", e2.printStackTrace().toString())
+                                    } catch (e: Exception) {
+                                        Log.e("eachHopHandler", "",e)
                                         threadMutex.withLock {
                                             tracerouteThreadsIntList.indices.forEach { index ->
                                                 if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -2310,7 +2311,7 @@ class TracerouteHandler {
                                         }
                                     }
                                 } catch (e: Exception) {
-                                    Log.e("eachHopHandler", e.printStackTrace().toString())
+                                    Log.e("eachHopHandler", "",e)
                                     item[2][0].value = "*"
                                     threadMutex.withLock {
                                         tracerouteThreadsIntList.indices.forEach { index ->
@@ -2390,7 +2391,7 @@ class TracerouteHandler {
 
             return stdOutput.toString()
         } catch (e: Exception) {
-            Log.e("nativePingHandler", e.printStackTrace().toString())
+            Log.e("nativePingHandler", "",e)
             return ERRORIDENTIFIER
         }
 
