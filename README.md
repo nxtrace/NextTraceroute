@@ -18,7 +18,11 @@ Enter target address (IPv4, IPv6, Hostname and URL), press run, and enjoy!
 
 Thanks for the warmhearted support from every test user. This app has passed the closed testing, therefore it has entered the Google Play store. 
 
+P.S. Users who have installed the test version can now uninstall it and download the official release from the link above.
+
 感谢所有测试用户的热情支持，本应用已经通过封闭测试，正式进入Google Play商店。
+
+P.S. 已经安装测试版的用户已经可以卸载测试应用，去上述链接下载正式版了。
 
 # Contact
 
