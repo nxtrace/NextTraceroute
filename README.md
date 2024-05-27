@@ -12,25 +12,13 @@ Enter target address (IPv4, IPv6, Hostname and URL), press run, and enjoy!
 
 支持IPv4、IPv6、域名输入和URL提取域名，点击运行。
 
-# Launching on Google Play
+# Get It on Google Play
 
+<a href='https://play.google.com/store/apps/details?id=com.surfaceocean.nexttraceroute&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' width="256" height="96" src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></a>
 
+Thanks for the warmhearted support from every test user. This app has passed the closed testing, therefore it has entered the Google Play store. 
 
-我们需要您帮助测试以上架Google Play，[Google的新政策](https://support.google.com/googleplay/android-developer/answer/14151465)要求20个人进行14天的测试才能上架，以下是教程：
-
-1. 在以下问卷输入您的Google Play账号绑定的主邮箱： (https://docs.google.com/forms/d/e/1FAIpQLSfg41wXSyPbYKj1X3KkVIdutVd9roV1Z4C42CrLX7fnnkMSSA/viewform?usp=sf_link)
-2. 在我手动添加您的邮箱进入测试名单后，就可以在浏览器打开此链接进入测试： (https://play.google.com/apps/testing/com.surfaceocean.nexttraceroute)
-3. 删除之前安装的该应用，并在上一条链接进入测试后，就可以进入该Google Play商店页面安装测试应用： (https://play.google.com/store/apps/details?id=com.surfaceocean.nexttraceroute)
-4. 在安装以后，Google要求您保持测试和安装状态14天以上以达到测试标准,并在14天内“经常”打开应用。
-5. 在Google Play商店页面给出评分和简短的评价、意见和建议。
-
-We need your help to test before launching on Google Play. [Google's new policy](https://support.google.com/googleplay/android-developer/answer/14151465) requires 20 people to test for 14 days before going live. Below is the tutorial:
-
-1. Enter the main email associated with your Google Play account in the following questionnaire: (https://docs.google.com/forms/d/e/1FAIpQLSfg41wXSyPbYKj1X3KkVIdutVd9roV1Z4C42CrLX7fnnkMSSA/viewform?usp=sf_link)
-2. After I manually add your email to the test list, you can open this link in your web browser to join the test: (https://play.google.com/apps/testing/com.surfaceocean.nexttraceroute)
-3. Uninstall the previously installed app, and after joining the test in the previous link, you can go to this Google Play Store page to install the test app: (https://play.google.com/store/apps/details?id=com.surfaceocean.nexttraceroute)
-4. After installation, Google requires you to maintain the test and installation status for more than 14 days to meet the testing standards, and to "frequently" open the app during these 14 days.
-5. Leave a rating and a brief review, opinion, and suggestion on the Google Play store page.
+感谢所有测试用户的热情支持，本应用已经通过封闭测试，正式进入Google Play商店。
 
 # Contact
 
