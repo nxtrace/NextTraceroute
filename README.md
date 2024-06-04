@@ -34,11 +34,6 @@ The following are all the social media and contact methods of the main maintaine
 
 [Telegram channel](https://t.me/nexttraceroute)
 
-# Example Screenshot
-![example1](./pic/1.png)
-![example2](./pic/2.png)
-![examplesettings](./pic/settings.png)
-
 # FAQ
 
 * Q: Why does the app return "IPv4 and IPv6 native ping failed! Using linux api instead. (Unstable)"?
@@ -56,6 +51,11 @@ The following are all the social media and contact methods of the main maintaine
   A: This could be a false alarm by automatic scans. And we have reported this to related anti malware providers. Please ensure that your virus database is updated to the latest version. Only the binary software download methods mentioned on this GitHub page are officially released by the author. Please be cautious of this software from other sources.
 
   答：这可能是自动扫描的误报。我们已经向相关的反恶意软件提供商报告了这个问题，请确保您的病毒库更新到最新版本。只有此GitHub页面提到的二进制软件下载方法才是作者发布的，请小心其他来源的此软件。
+
+# Example Screenshot
+![example1](./pic/1.png)
+![example2](./pic/2.png)
+![examplesettings](./pic/settings.png)
 
 # LICENSE
 ```
