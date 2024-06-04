@@ -49,6 +49,14 @@ The following are all the social media and contact methods of the main maintaine
 
   答：默认情况下，用户空间的安卓程序不允许使用原始套接字。本程序目前使用Linux系统自带的ping和ping6程序，这个警告表明您的安卓设备不支持系统原生的ping和ping6程序，因此目前无法使用该程序。基于Linux API的免root路由追踪功能仍在开发中。
 
+* Q: Why do some anti malware programs report this application as a virus (e.g. Android:Evo-gen [Trj])?
+
+  问：为什么有的杀毒软件报告本应用是病毒？（例如：Android:Evo-gen [Trj]）？
+  
+  A: This could be a false alarm by automatic scans. And we have reported this to related anti malware providers. Please ensure that your virus database is updated to the latest version. Only the binary software download methods mentioned on this GitHub page are officially released by the author. Please be cautious of this software from other sources.
+
+  答：这可能是自动扫描的误报。我们已经向相关的反恶意软件提供商报告了这个问题，请确保您的病毒库更新到最新版本。只有此GitHub页面提到的二进制软件下载方法才是作者发布的，请小心其他来源的此软件。
+
 # LICENSE
 ```
 This program is free software: you can redistribute it and/or modify
