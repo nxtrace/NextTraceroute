@@ -1,8 +1,7 @@
 name: Generated APK AAB
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -64,8 +63,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ github.token }}
-          file: NextTraceroute-$GITHUB_REF_NAME.apk
-          asset_name: NextTraceroute-$GITHUB_REF_NAME.apk
+          file: NextTraceroute-${{ env.GITHUB_REF_NAME }}.apk
+          asset_name: NextTraceroute-${{ env.GITHUB_REF_NAME }}.apk
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -73,7 +72,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ github.token }}
-          file: NextTraceroute-$GITHUB_REF_NAME.aab
-          asset_name: NextTraceroute-$GITHUB_REF_NAME.aab
+          file: NextTraceroute-${{ env.GITHUB_REF_NAME }}.aab
+          asset_name: NextTraceroute-${{ env.GITHUB_REF_NAME }}.aab
           tag: ${{ github.ref }}
           overwrite: true
