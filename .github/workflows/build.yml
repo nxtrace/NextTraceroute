@@ -55,16 +55,12 @@ jobs:
         id: releaseApk
         run: echo "apkfile=$(find app/build/outputs/apk/release/*.apk)" >> $GITHUB_OUTPUT
 
-      - run: mv ${{steps.releaseApk.outputs.apkfile}} NextTraceroute-$GITHUB_REF_NAME.apk
-
-      - run: mv ${{steps.releaseAab.outputs.aabfile}} NextTraceroute-$GITHUB_REF_NAME.aab
-
       - name: Upload APK to Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ github.token }}
-          file: NextTraceroute-${{ env.GITHUB_REF_NAME }}.apk
-          asset_name: NextTraceroute-${{ env.GITHUB_REF_NAME }}.apk
+          file: ${{steps.releaseApk.outputs.apkfile}}
+          asset_name: NextTraceroute-$tag.apk
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -72,7 +68,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ github.token }}
-          file: NextTraceroute-${{ env.GITHUB_REF_NAME }}.aab
-          asset_name: NextTraceroute-${{ env.GITHUB_REF_NAME }}.aab
+          file: ${{steps.releaseAab.outputs.aabfile}}
+          asset_name: NextTraceroute-$tag.aab
           tag: ${{ github.ref }}
           overwrite: true
