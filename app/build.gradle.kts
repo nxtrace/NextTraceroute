@@ -12,6 +12,12 @@ android {
             storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
         }
     }
+    dependenciesInfo {
+        // Disables dependency metadata when building APKs.
+        includeInApk = false
+        // Disables dependency metadata when building Android App Bundles.
+        includeInBundle = false
+    }
     namespace = "com.surfaceocean.nexttraceroute"
     compileSdk = 34
 
