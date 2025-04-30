@@ -16,17 +16,17 @@ android {
         // Disables dependency metadata when building APKs.
         includeInApk = false
         // Disables dependency metadata when building Android App Bundles.
-        includeInBundle = false
+//        includeInBundle = false
     }
     namespace = "com.surfaceocean.nexttraceroute"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.surfaceocean.nexttraceroute"
         minSdk = 21
-        targetSdk = 34
-        versionCode = 9
-        versionName = "0.0.9"
+        targetSdk = 35
+        versionCode = 10
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -45,16 +45,21 @@ android {
             )
         }
     }
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "21"
     }
     buildFeatures {
         compose = true
-        buildConfig =true
+        buildConfig = true
 
     }
     composeOptions {
@@ -75,7 +80,7 @@ android {
 
 dependencies {
     implementation(libs.dnsjava)
-    implementation (libs.ipaddress)
+    implementation(libs.ipaddress)
     implementation(libs.okhttp)
     implementation(libs.gson)
     implementation(libs.slf4j.android)

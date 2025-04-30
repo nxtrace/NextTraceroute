@@ -40,7 +40,6 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun NextTracerouteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -57,8 +56,18 @@ fun NextTracerouteTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            window.decorView.setOnApplyWindowInsetsListener { decorView, insets ->
+                decorView.setBackgroundColor(colorScheme.primary.toArgb())
+                insets
+            }
+            val controller = WindowCompat.getInsetsController(window, window.decorView)
+            controller.isAppearanceLightStatusBars = !darkTheme
+//            } else {
+//                window.setStatusBarColor(colorScheme.primary.toArgb())
+//                WindowCompat.getInsetsController(window, window.decorView)
+//                    .isAppearanceLightStatusBars = !darkTheme
+//            }
         }
     }
 

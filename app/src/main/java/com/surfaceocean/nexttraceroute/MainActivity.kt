@@ -37,9 +37,10 @@ The "androidx" library is licensed under the Apache 2.0 License.
 package com.surfaceocean.nexttraceroute
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -61,6 +62,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -110,16 +113,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.surfaceocean.nexttraceroute.ui.theme.ButtonDisabledColor
@@ -143,7 +144,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             NextTracerouteTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .systemBarsPadding(),
                     //color = MaterialTheme.colorScheme.background,
                     color = DefaultBackgroundColor
                 ) {
@@ -307,6 +311,8 @@ fun AboutPage(currentPage: MutableState<String>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
+            .systemBarsPadding()
             .border(1.dp, DefaultBackgroundColorReverse)
             .padding(bottom = 1.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -383,7 +389,9 @@ fun MyTopAppBar(
         },
         modifier = modifier
             .border(1.dp, DefaultBackgroundColorReverse)
-            .padding(bottom = 1.dp),
+            .padding(bottom = 1.dp)
+            .statusBarsPadding()
+            .systemBarsPadding(),
         actions = {
             IconButton(onClick = { showMenu = !showMenu }
             ) {
@@ -435,7 +443,7 @@ fun MyTopAppBar(
                         context.startActivity(
                             Intent(
                                 Intent.ACTION_VIEW,
-                                Uri.parse(privacyURL)
+                                privacyURL.toUri()
                             )
                         )
                     },
@@ -1117,7 +1125,7 @@ fun MainColumn(
     val insertErrorText = remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val searchText = remember { mutableStateOf("") }
-    val clipboardManager: ClipboardManager = LocalClipboardManager.current
+    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val trHandler = remember { TracerouteHandler() }
 
 
@@ -1157,7 +1165,10 @@ fun MainColumn(
 
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         //Top Bar
@@ -1280,7 +1291,7 @@ fun MainColumn(
         }
         if (testText.value != "") {
             Text(text = testText.value, color = DefaultBackgroundColorReverse)
-            //clipboardManager.setText(AnnotatedString(testText.value))
+//            clipboardManager.setPrimaryClip(ClipData.newPlainText("simple text",testText.value))
         }
         if (nativePingCheckErrorText.value != "") {
             Toast.makeText(context, nativePingCheckErrorText.value, Toast.LENGTH_LONG).show()
@@ -1296,7 +1307,7 @@ fun MainColumn(
                         context.startActivity(
                             Intent(
                                 Intent.ACTION_VIEW,
-                                Uri.parse(traceMapURL.value)
+                                traceMapURL.value.toUri()
                             )
                         )
                     },
@@ -1314,8 +1325,9 @@ fun MainColumn(
             if (tracerouteThreadsIntList.all { it == 0 }) {
                 Button(
                     onClick = {
-                        clipboardManager.setText(
-                            AnnotatedString(
+                        clipboardManager.setPrimaryClip(
+                            ClipData.newPlainText(
+                                "simple text",
                                 gridDataList.joinToString(
                                     separator = "\n",
                                     prefix = "Traceroute Result:\n"
@@ -1333,6 +1345,7 @@ fun MainColumn(
                             )
                         )
                         Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT).show()
+
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ButtonEnabledColor,
@@ -1437,14 +1450,17 @@ fun MainColumn(
                                     .pointerInput(item) {
                                         detectTapGestures(
                                             onLongPress = {
-                                                clipboardManager.setText(AnnotatedString(item.value))
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "Copied!",
-                                                        Toast.LENGTH_SHORT
+                                                clipboardManager.setPrimaryClip(
+                                                    ClipData.newPlainText(
+                                                        "simple text",
+                                                        item.value
                                                     )
-                                                    .show()
+                                                )
+                                                Toast.makeText(
+                                                    context,
+                                                    "Copied!",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
                                             },
                                             onTap = {
                                                 if (item.value != "*" && item.value != "") {
@@ -1454,7 +1470,7 @@ fun MainColumn(
                                                         context.startActivity(
                                                             Intent(
                                                                 Intent.ACTION_VIEW,
-                                                                Uri.parse(tapURL)
+                                                                tapURL.toUri()
                                                             )
                                                         )
                                                     }
