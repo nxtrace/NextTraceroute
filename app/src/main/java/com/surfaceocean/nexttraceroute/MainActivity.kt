@@ -47,7 +47,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -69,7 +68,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -79,8 +77,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -88,10 +84,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -101,7 +95,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -120,7 +113,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toUri
+import androidx.room.Room
+import androidx.room.withTransaction
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.surfaceocean.nexttraceroute.ui.theme.ButtonDisabledColor
@@ -135,8 +131,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
-import kotlin.math.roundToInt
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -151,6 +145,7 @@ class MainActivity : ComponentActivity() {
                     //color = MaterialTheme.colorScheme.background,
                     color = DefaultBackgroundColor
                 ) {
+                    org.xbill.DNS.config.AndroidResolverConfigProvider.setContext(this)
                     val isSearchBarEnabled = remember { mutableStateOf(true) }
                     val currentPage = remember { mutableStateOf("main") }
                     val context = LocalContext.current
@@ -170,6 +165,11 @@ class MainActivity : ComponentActivity() {
                     var lastBackPress by remember { mutableLongStateOf(0L) }
                     val listState = rememberLazyListState()
                     val isScrollToFirstLineTriggered = remember { mutableStateOf(false) }
+                    val db = Room.databaseBuilder(
+                        context,
+                        AppDatabase::class.java, "app-database"
+                    ).build()
+                    val historyDao = db.historyDao()
 
                     //load settings from file
                     LaunchedEffect(Unit) {
@@ -208,7 +208,7 @@ class MainActivity : ComponentActivity() {
 
 
                         } catch (e: Exception) {
-                            Log.e("readSettngsHandler", e.printStackTrace().toString())
+                            Log.e("readSettingsHandler", e.printStackTrace().toString())
                         }
                     }
 
@@ -225,6 +225,7 @@ class MainActivity : ComponentActivity() {
 
                     BackHandler {
                         if (System.currentTimeMillis() - lastBackPress < 2000) {
+                            db.close()
                             (context as? Activity)?.finish()
                         } else {
                             Toast.makeText(
@@ -259,6 +260,15 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            "history" -> {
+                                HistoryPage(
+                                    context = context,
+                                    currentPage = currentPage,
+                                    historyDao = historyDao,
+                                    db = db
+                                )
+                            }
+
                             "main" -> {
                                 MyTopAppBar(
                                     currentPage = currentPage,
@@ -281,7 +291,9 @@ class MainActivity : ComponentActivity() {
                                     currentDOHServer = currentDOHServer,
                                     currentDNSMode = currentDNSMode,
                                     listState = listState,
-                                    isScrollToFirstLineTriggered = isScrollToFirstLineTriggered
+                                    isScrollToFirstLineTriggered = isScrollToFirstLineTriggered,
+                                    historyDao = historyDao,
+                                    db = db
                                 )
 
 
@@ -313,7 +325,7 @@ fun AboutPage(currentPage: MutableState<String>) {
             .fillMaxWidth()
             .statusBarsPadding()
             .systemBarsPadding()
-            .border(1.dp, DefaultBackgroundColorReverse)
+            .border(1.dp, Color.DarkGray)
             .padding(bottom = 1.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -372,7 +384,7 @@ fun MyTopAppBar(
     var showMenu by remember { mutableStateOf(false) }
     TopAppBar(
         colors = TopAppBarColors(
-            containerColor = DefaultBackgroundColor,
+            containerColor = Color.Black,
             scrolledContainerColor = DefaultBackgroundColorReverse,
             navigationIconContentColor = DefaultBackgroundColorReverse,
             titleContentColor = DefaultBackgroundColorReverse,
@@ -388,7 +400,7 @@ fun MyTopAppBar(
             )
         },
         modifier = modifier
-            .border(1.dp, DefaultBackgroundColorReverse)
+            .border(1.dp, Color.DarkGray)
             .padding(bottom = 1.dp)
             .statusBarsPadding()
             .systemBarsPadding(),
@@ -412,6 +424,20 @@ fun MyTopAppBar(
                     onClick = {
                         showMenu = false
                         currentPage.value = "settings"
+                    },
+                    enabled = isSearchBarEnabled.value
+                )
+                DropdownMenuItem(
+                    modifier = Modifier.background(DefaultBackgroundColor),
+                    text = {
+                        Text(
+                            "History",
+                            color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray
+                        )
+                    },
+                    onClick = {
+                        showMenu = false
+                        currentPage.value = "history"
                     },
                     enabled = isSearchBarEnabled.value
                 )
@@ -455,568 +481,6 @@ fun MyTopAppBar(
 
 }
 
-@Composable
-fun SettingsColumn(
-    modifier: Modifier = Modifier, context: Context,
-    currentPage: MutableState<String>,
-    currentLanguage: MutableState<String>, isTraceMapEnabled: MutableState<Boolean>,
-    maxTraceTTL: MutableIntState, traceTimeout: MutableState<String>,
-    traceCount: MutableState<String>, currentDNSMode: MutableState<String>,
-    tracerouteDNSServer: MutableState<String>, currentDOHServer: MutableState<String>,
-    apiHostNamePOW: MutableState<String>, apiDNSNamePOW: MutableState<String>,
-    apiHostName: MutableState<String>, apiDNSName: MutableState<String>,
-
-    ) {
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val trHandler = TracerouteHandler()
-    val scrollState = rememberScrollState()
-    val languageExpanded = remember { mutableStateOf(false) }
-    val languageOptions = listOf("Default", "zh", "en")
-    val languageSelectedIndex = remember { mutableIntStateOf(0) }
-    val enableTraceMapCheckedState = remember { mutableStateOf(true) }
-    val maxHopSliderValue = remember { mutableFloatStateOf(30f) }
-    val maxTimeoutSliderValue = remember { mutableFloatStateOf(1f) }
-    val maxPacketCountSliderValue = remember { mutableFloatStateOf(5f) }
-    val dnsModeExpanded = remember { mutableStateOf(false) }
-    val dnsModeOptions = listOf("udp", "tcp", "doh")
-    val dnsModeSelectedIndex = remember { mutableIntStateOf(0) }
-    val dnsServerText = remember { mutableStateOf("") }
-    val dohServersExpanded = remember { mutableStateOf(false) }
-    val dohServersSelectedIndex = remember { mutableIntStateOf(0) }
-    val dohServersOptions = listOf(
-        "https://1.1.1.1/dns-query",
-        "https://[2606:4700:4700::1111]/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://[2001:4860:4860::8888]/dns-query",
-        "https://223.5.5.5/dns-query",
-        "https://dns.cloudflare.com/dns-query",
-        "https://dns.adguard-dns.com/dns-query",
-        "https://doh.opendns.com/dns-query",
-        "https://dns.google/dns-query",
-        "https://ordns.he.net/dns-query",
-        "https://dns.quad9.net/dns-query"
-    )
-    val powHostNameText = remember { mutableStateOf("") }
-    val powDNSNameText = remember { mutableStateOf("") }
-    val apiHostNameText = remember { mutableStateOf("") }
-    val apiDNSNameText = remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
-        languageSelectedIndex.intValue = languageOptions.indexOf(currentLanguage.value)
-        enableTraceMapCheckedState.value = isTraceMapEnabled.value
-        maxHopSliderValue.floatValue = maxTraceTTL.intValue.toFloat()
-        maxTimeoutSliderValue.floatValue = traceTimeout.value.toFloat()
-        maxPacketCountSliderValue.floatValue = traceCount.value.toFloat()
-        dnsModeSelectedIndex.intValue = dnsModeOptions.indexOf(currentDNSMode.value)
-        dnsServerText.value = tracerouteDNSServer.value
-        dohServersSelectedIndex.intValue = dohServersOptions.indexOf(currentDOHServer.value)
-        powHostNameText.value = apiHostNamePOW.value
-        powDNSNameText.value = apiDNSNamePOW.value
-        apiHostNameText.value = apiHostName.value
-        apiDNSNameText.value = apiDNSName.value
-
-    }
-    BackHandler {
-        currentPage.value = "main"
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, DefaultBackgroundColorReverse)
-            .padding(bottom = 1.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = { currentPage.value = "main" }) {
-            Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.White)
-        }
-        Button(
-            modifier = Modifier.alignByBaseline(),
-            onClick = {
-                var errorText = ""
-                currentLanguage.value = languageOptions[languageSelectedIndex.intValue]
-                isTraceMapEnabled.value = enableTraceMapCheckedState.value
-                maxTraceTTL.intValue = maxHopSliderValue.floatValue.toInt()
-                traceTimeout.value = maxTimeoutSliderValue.floatValue.toInt().toString()
-                traceCount.value = maxPacketCountSliderValue.floatValue.toInt().toString()
-                currentDNSMode.value = dnsModeOptions[dnsModeSelectedIndex.intValue]
-                if (trHandler.identifyInput(dnsServerText.value) == trHandler.IPV4IDENTIFIER ||
-                    trHandler.identifyInput(dnsServerText.value) == trHandler.IPV6IDENTIFIER
-                ) {
-                    tracerouteDNSServer.value = dnsServerText.value
-                } else {
-                    errorText += "Invalid UDP/TCP DNS server, "
-                }
-                currentDOHServer.value = dohServersOptions[dohServersSelectedIndex.intValue]
-                if (trHandler.identifyInput(powHostNameText.value) == trHandler.HOSTNAMEIDENTIFIER) {
-                    apiHostNamePOW.value = powHostNameText.value
-                } else {
-                    errorText += "Invalid Hostname for POW server, "
-                }
-                if (trHandler.identifyInput(powDNSNameText.value) == trHandler.IPV4IDENTIFIER ||
-                    trHandler.identifyInput(powDNSNameText.value) == trHandler.IPV6IDENTIFIER ||
-                    trHandler.identifyInput(powDNSNameText.value) == trHandler.HOSTNAMEIDENTIFIER
-                ) {
-                    apiDNSNamePOW.value = powDNSNameText.value
-                } else {
-                    errorText += "Invalid DNS Hostname for POW server, "
-                }
-
-                if (trHandler.identifyInput(apiHostNameText.value) == trHandler.HOSTNAMEIDENTIFIER) {
-                    apiHostName.value = apiHostNameText.value
-                } else {
-                    errorText += "Invalid Hostname for API server, "
-                }
-
-                if (trHandler.identifyInput(apiDNSNameText.value) == trHandler.IPV4IDENTIFIER ||
-                    trHandler.identifyInput(apiDNSNameText.value) == trHandler.IPV6IDENTIFIER ||
-                    trHandler.identifyInput(apiDNSNameText.value) == trHandler.HOSTNAMEIDENTIFIER
-                ) {
-                    apiDNSName.value = apiDNSNameText.value
-                } else {
-                    errorText += "Invalid DNS Hostname for API server, "
-                }
-
-                if (errorText != "") {
-                    Toast.makeText(context, errorText, Toast.LENGTH_LONG).show()
-                } else {
-                    val savingSettingsMap = mapOf(
-                        "currentLanguage" to currentLanguage.value,
-                        "isTraceMapEnabled" to isTraceMapEnabled.value,
-                        "maxTraceTTL" to maxTraceTTL.intValue.toString(),
-                        "traceTimeout" to traceTimeout.value,
-                        "traceCount" to traceCount.value,
-                        "currentDNSMode" to currentDNSMode.value,
-                        "tracerouteDNSServer" to tracerouteDNSServer.value,
-                        "currentDOHServer" to currentDOHServer.value,
-                        "apiHostNamePOW" to apiHostNamePOW.value,
-                        "apiDNSNamePOW" to apiDNSNamePOW.value,
-                        "apiHostName" to apiHostName.value,
-                        "apiDNSName" to apiDNSName.value
-                    )
-                    try {
-                        val gson = Gson()
-                        val jsonString = gson.toJson(savingSettingsMap)
-                        context.openFileOutput("settings.json", Context.MODE_PRIVATE)
-                            .use { outputStream ->
-                                outputStream.write(jsonString.toByteArray())
-                            }
-                    } catch (e: Exception) {
-                        Log.e("SettingSaveHandler", e.printStackTrace().toString())
-                    }
-                    Toast.makeText(context, "Change Saved!", Toast.LENGTH_LONG).show()
-                }
-
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = ButtonEnabledColor,
-                contentColor = DefaultBackgroundColor,
-                disabledContainerColor = Color.Gray,
-                disabledContentColor = Color.LightGray
-            )
-
-        ) {
-            Text("Save")
-        }
-    }
-    Spacer(modifier = Modifier.height(8.dp))
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                //.border(1.dp, DefaultBackgroundColorReverse)
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("API Language   ", color = DefaultBackgroundColorReverse)
-            TextButton(
-                onClick = { languageExpanded.value = true },
-                border = BorderStroke(2.dp, DefaultBackgroundColorReverse),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = languageOptions[languageSelectedIndex.intValue],
-                    color = DefaultBackgroundColorReverse
-                )
-            }
-            DropdownMenu(
-                expanded = languageExpanded.value,
-                onDismissRequest = { languageExpanded.value = false }
-            ) {
-                languageOptions.forEachIndexed { index, text ->
-                    DropdownMenuItem(onClick = {
-                        languageSelectedIndex.intValue = index
-                        languageExpanded.value = false
-                    }, text = { Text(text = text) })
-                }
-            }
-        }
-        HorizontalDivider(color = Color.Yellow, thickness = 1.dp)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Enable TraceMap", color = DefaultBackgroundColorReverse)
-            Checkbox(
-                checked = enableTraceMapCheckedState.value,
-                onCheckedChange = { enableTraceMapCheckedState.value = it },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = Color.Green,
-                    uncheckedColor = Color.Gray,
-                    checkmarkColor = Color.White
-                )
-            )
-
-        }
-        HorizontalDivider(color = Color.Yellow, thickness = 1.dp)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("TTL:", color = DefaultBackgroundColorReverse)
-            Text(
-                maxHopSliderValue.floatValue.toInt().toString(),
-                color = DefaultBackgroundColorReverse
-            )
-            Slider(
-                value = maxHopSliderValue.floatValue,
-                onValueChange = { newValue: Float ->
-                    maxHopSliderValue.floatValue = newValue.roundToInt().toFloat()
-                },
-                valueRange = 1f..255f,
-                steps = 254
-            )
-
-        }
-        HorizontalDivider(color = Color.Yellow, thickness = 1.dp)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Single Packet Timeout (Sec):", color = DefaultBackgroundColorReverse)
-            Text(
-                maxTimeoutSliderValue.floatValue.toInt().toString(),
-                color = DefaultBackgroundColorReverse
-            )
-            Slider(
-                value = maxTimeoutSliderValue.floatValue,
-                onValueChange = { newValue: Float ->
-                    maxTimeoutSliderValue.floatValue = newValue.roundToInt().toFloat()
-                },
-                valueRange = 1f..10f,
-                steps = 10
-            )
-
-        }
-        HorizontalDivider(color = Color.Yellow, thickness = 1.dp)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Packet Count:", color = DefaultBackgroundColorReverse)
-            Text(
-                maxPacketCountSliderValue.floatValue.toInt().toString(),
-                color = DefaultBackgroundColorReverse
-            )
-            Slider(
-                value = maxPacketCountSliderValue.floatValue,
-                onValueChange = { newValue: Float ->
-                    maxPacketCountSliderValue.floatValue = newValue.roundToInt().toFloat()
-                },
-                valueRange = 1f..10f,
-                steps = 10
-            )
-
-        }
-        HorizontalDivider(color = Color.Yellow, thickness = 1.dp)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                //.border(1.dp, DefaultBackgroundColorReverse)
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("DNS Mode   ", color = DefaultBackgroundColorReverse)
-            TextButton(
-                onClick = { dnsModeExpanded.value = true },
-                border = BorderStroke(2.dp, DefaultBackgroundColorReverse),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = dnsModeOptions[dnsModeSelectedIndex.intValue],
-                    color = DefaultBackgroundColorReverse
-                )
-            }
-            DropdownMenu(
-                expanded = dnsModeExpanded.value,
-                onDismissRequest = { dnsModeExpanded.value = false }
-            ) {
-                dnsModeOptions.forEachIndexed { index, text ->
-                    DropdownMenuItem(onClick = {
-                        dnsModeSelectedIndex.intValue = index
-                        dnsModeExpanded.value = false
-                    }, text = { Text(text = text) })
-                }
-            }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("UDP/TCP DNS Server:", color = DefaultBackgroundColorReverse)
-            TextField(
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        keyboardController?.hide()
-                    }
-                ),
-                singleLine = true,
-                value = dnsServerText.value,
-                onValueChange = {
-                    dnsServerText.value = it
-                    dnsServerText.value = dnsServerText.value.replace("\n", "").trim()
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
-                ),
-                placeholder = {
-                    Text("Insert IPv4 or IPv6", color = DefaultBackgroundColorReverse)
-                },
-                modifier = modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 20.dp)
-            )
-
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                //.border(1.dp, DefaultBackgroundColorReverse)
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Doh Server   ", color = DefaultBackgroundColorReverse)
-            TextButton(
-                onClick = { dohServersExpanded.value = true },
-                border = BorderStroke(2.dp, DefaultBackgroundColorReverse),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = dohServersOptions[dohServersSelectedIndex.intValue],
-                    color = DefaultBackgroundColorReverse
-                )
-            }
-            DropdownMenu(
-                expanded = dohServersExpanded.value,
-                onDismissRequest = { dohServersExpanded.value = false }
-            ) {
-                dohServersOptions.forEachIndexed { index, text ->
-                    DropdownMenuItem(onClick = {
-                        dohServersSelectedIndex.intValue = index
-                        dohServersExpanded.value = false
-                    }, text = { Text(text = text) })
-                }
-            }
-        }
-        HorizontalDivider(color = Color.Yellow, thickness = 1.dp)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("POW HostName:", color = DefaultBackgroundColorReverse)
-            TextField(
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        keyboardController?.hide()
-                    }
-                ),
-                singleLine = true,
-                value = powHostNameText.value,
-                onValueChange = {
-                    powHostNameText.value = it
-                    powHostNameText.value = powHostNameText.value.replace("\n", "").trim()
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
-                ),
-                placeholder = {
-                    Text("Insert Hostname", color = DefaultBackgroundColorReverse)
-                },
-                modifier = modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 20.dp)
-            )
-
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("POW DNSName:", color = DefaultBackgroundColorReverse)
-            TextField(
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        keyboardController?.hide()
-                    }
-                ),
-                singleLine = true,
-                value = powDNSNameText.value,
-                onValueChange = {
-                    powDNSNameText.value = it
-                    powDNSNameText.value = powDNSNameText.value.replace("\n", "").trim()
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
-                ),
-                placeholder = {
-                    Text("Insert Hostname, IPv4 or IPv6", color = DefaultBackgroundColorReverse)
-                },
-                modifier = modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 20.dp)
-            )
-
-        }
-
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("API HostName:", color = DefaultBackgroundColorReverse)
-            TextField(
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        keyboardController?.hide()
-                    }
-                ),
-                singleLine = true,
-                value = apiHostNameText.value,
-                onValueChange = {
-                    apiHostNameText.value = it
-                    apiHostNameText.value = apiHostNameText.value.replace("\n", "").trim()
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
-                ),
-                placeholder = {
-                    Text("Insert Hostname", color = DefaultBackgroundColorReverse)
-                },
-                modifier = modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 20.dp)
-            )
-
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 1.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("API DNSName:", color = DefaultBackgroundColorReverse)
-            TextField(
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        keyboardController?.hide()
-                    }
-                ),
-                singleLine = true,
-                value = apiDNSNameText.value,
-                onValueChange = {
-                    apiDNSNameText.value = it
-                    apiDNSNameText.value = apiDNSNameText.value.replace("\n", "").trim()
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
-                ),
-                placeholder = {
-                    Text("Insert Hostname, IPv4 or IPv6", color = DefaultBackgroundColorReverse)
-                },
-                modifier = modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 20.dp)
-            )
-
-        }
-        HorizontalDivider(color = Color.Yellow, thickness = 1.dp)
-
-
-    }
-}
-
 
 @Composable
 fun CheckThreadsStatus(
@@ -1025,7 +489,12 @@ fun CheckThreadsStatus(
     tracerouteThreadsIntList: MutableList<Int>,
     isSearchBarEnabled: MutableState<Boolean>,
     multipleIps: MutableList<MutableState<String>>,
-    isDNSInProgress: MutableState<Boolean>
+    isDNSInProgress: MutableState<Boolean>,
+    currentDomain: MutableState<String>,
+    searchText: MutableState<String>,
+    copyHistory: MutableState<String>,
+    historyDao: HistoryDao,
+    db: AppDatabase
 ) {
     LaunchedEffect(Unit) {
         scope.launch(Dispatchers.IO) {
@@ -1048,6 +517,16 @@ fun CheckThreadsStatus(
             //tracerouteThreadsIntList.clear()
             if (multipleIps.size == 0) {
                 isSearchBarEnabled.value = true
+                //Add history after all threads are finished
+                val historyData = HistoryData(
+                    ip = searchText.value,
+                    domain = currentDomain.value,
+                    history = copyHistory.value
+                )
+                db.withTransaction {
+                    historyDao.insertHistory(historyData)
+                }
+                currentDomain.value = ""
             }
         }
     }
@@ -1068,8 +547,10 @@ fun clearData(
     preferredAPIIpPOW: MutableState<String>,
     apiDNSListPOW: MutableList<String>,
     traceMapThreadsMapList: MutableList<List<MutableMap<String, Any?>>>,
-    traceMapURL: MutableState<String>, isAPIFinished: MutableState<Boolean>
+    traceMapURL: MutableState<String>, isAPIFinished: MutableState<Boolean>,
+    copyHistory: MutableState<String>
 ) {
+    copyHistory.value = ""
     isAPIFinished.value = false
     traceMapURL.value = ""
     testAPIText.value = ""
@@ -1107,6 +588,7 @@ fun MainColumn(
     currentDOHServer: MutableState<String>,
     currentDNSMode: MutableState<String>, listState: LazyListState,
     isScrollToFirstLineTriggered: MutableState<Boolean>,
+    historyDao: HistoryDao, db: AppDatabase
 ) {
 
     val threadMutex = Mutex()
@@ -1126,6 +608,7 @@ fun MainColumn(
     val coroutineScope = rememberCoroutineScope()
     val searchText = remember { mutableStateOf("") }
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val keyboardController = LocalSoftwareKeyboardController.current
     val trHandler = remember { TracerouteHandler() }
 
 
@@ -1136,6 +619,7 @@ fun MainColumn(
     val apiDNSList = remember { mutableListOf<String>() }
     val isAPIFinished = remember { mutableStateOf(false) }
 
+    val currentDomain = remember { mutableStateOf("") }
 
     val basicGridData = remember {
         mutableStateListOf(
@@ -1159,7 +643,7 @@ fun MainColumn(
         }
     }
     val testText = remember { mutableStateOf("") }
-
+    val copyHistory = remember { mutableStateOf("") }
 
 
 
@@ -1178,6 +662,7 @@ fun MainColumn(
         if (isButtonClicked.value) {
             isButtonClicked.value = false
             isSearchBarEnabled.value = false
+            keyboardController?.hide()
             clearData(
                 multipleIps = multipleIps,
                 nativePingCheckErrorText = nativePingCheckErrorText,
@@ -1188,7 +673,8 @@ fun MainColumn(
                 apiDNSListPOW = apiDNSListPOW,
                 apiToken = apiToken,
                 traceMapThreadsMapList = traceMapThreadsMapList,
-                traceMapURL = traceMapURL, isAPIFinished = isAPIFinished
+                traceMapURL = traceMapURL, isAPIFinished = isAPIFinished,
+                copyHistory = copyHistory
             )
             trHandler.testNativePing(
                 v4Status = isNativePing4Available,
@@ -1230,7 +716,13 @@ fun MainColumn(
                 tracerouteThreadsIntList = tracerouteThreadsIntList,
                 isDNSInProgress = isDNSInProgress,
                 isSearchBarEnabled = isSearchBarEnabled,
-                multipleIps = multipleIps
+                multipleIps = multipleIps,
+                currentDomain = currentDomain,
+//                insertErrorText = insertErrorText,
+                searchText = searchText,
+                copyHistory = copyHistory,
+                historyDao = historyDao,
+                db = db
             )
             isScrollToFirstLineTriggered.value = true
         }
@@ -1260,6 +752,46 @@ fun MainColumn(
                 isButtonClicked = isButtonClicked,
                 isSearchBarEnabled = isSearchBarEnabled
             )
+            val searchDatabaseResultList = remember { mutableStateListOf<String>() }
+            val scope = rememberCoroutineScope()
+            LaunchedEffect(searchText.value) {
+                scope.launch(Dispatchers.IO) {
+                    if (isSearchBarEnabled.value && searchText.value != "") {
+                        try {
+                            db.withTransaction {
+                                searchDatabaseResultList.clear()
+                                val searchDatabaseReturn =
+                                    (historyDao.findInputIP(searchText.value) + historyDao.findInputDomain(
+                                        searchText.value
+                                    )).distinct()
+                                //only add if it's not perfectly matched
+                                if (!(searchDatabaseReturn.size == 1 && searchDatabaseReturn[0] == searchText.value)
+                                ) {
+                                    searchDatabaseResultList.addAll(searchDatabaseReturn)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("databaseHandler", e.printStackTrace().toString())
+                        }
+                    }
+                }
+            }
+            DropdownMenu(
+                expanded = isSearchBarEnabled.value && searchDatabaseResultList.size != 0,
+                properties = PopupProperties(
+                    focusable = false,
+                    dismissOnClickOutside = true,
+                    dismissOnBackPress = true
+                ),
+                onDismissRequest = { }
+            ) {
+                searchDatabaseResultList.forEach { text ->
+                    DropdownMenuItem(onClick = {
+                        searchText.value = text
+                        searchDatabaseResultList.clear()
+                    }, text = { Text(text = text) })
+                }
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
                 modifier = Modifier.alignByBaseline(),
@@ -1269,7 +801,7 @@ fun MainColumn(
                     containerColor = if (isSearchBarEnabled.value) ButtonEnabledColor else ButtonDisabledColor,
                     contentColor = DefaultBackgroundColor,
                     disabledContainerColor = Color.Gray,
-                    disabledContentColor = Color.LightGray
+                    disabledContentColor = Color.DarkGray
                 )
 
             ) {
@@ -1284,6 +816,7 @@ fun MainColumn(
                 strokeWidth = 4.dp,
                 modifier = Modifier.size(50.dp)
             )
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
         if (insertErrorText.value != "") {
@@ -1315,7 +848,7 @@ fun MainColumn(
                         containerColor = ButtonEnabledColor,
                         contentColor = DefaultBackgroundColor,
                         disabledContainerColor = Color.Gray,
-                        disabledContentColor = Color.LightGray
+                        disabledContentColor = Color.DarkGray
                     )
                 ) {
                     Text("Map")
@@ -1323,26 +856,24 @@ fun MainColumn(
             }
             Spacer(modifier = Modifier.width(8.dp))
             if (tracerouteThreadsIntList.all { it == 0 }) {
+                copyHistory.value = gridDataList.joinToString(
+                    separator = "\n",
+                    prefix = "Traceroute Result:\n" + "IP:" + searchText.value + "\n" + "Domain:" + currentDomain.value + "\n"
+                ) { layer ->
+                    if (layer[0][0].value != "") {
+                        layer.joinToString(separator = "\n") { row ->
+                            row.joinToString(separator = ", ") { cell ->
+                                cell.value
+                            }
+                        }
+                    } else {
+                        ""
+                    }
+                }.trim()
                 Button(
                     onClick = {
                         clipboardManager.setPrimaryClip(
-                            ClipData.newPlainText(
-                                "simple text",
-                                gridDataList.joinToString(
-                                    separator = "\n",
-                                    prefix = "Traceroute Result:\n"
-                                ) { layer ->
-                                    if (layer[0][0].value != "") {
-                                        layer.joinToString(separator = "\n") { row ->
-                                            row.joinToString(separator = ", ") { cell ->
-                                                cell.value
-                                            }
-                                        }
-                                    } else {
-                                        ""
-                                    }
-                                }.trim()
-                            )
+                            ClipData.newPlainText("simple text", copyHistory.value)
                         )
                         Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT).show()
 
@@ -1351,7 +882,7 @@ fun MainColumn(
                         containerColor = ButtonEnabledColor,
                         contentColor = DefaultBackgroundColor,
                         disabledContainerColor = Color.Gray,
-                        disabledContentColor = Color.LightGray
+                        disabledContentColor = Color.DarkGray
                     )
                 ) {
                     Text("Copy Result")
@@ -1380,13 +911,14 @@ fun MainColumn(
         if (multipleIps.size != 0 && tracerouteThreadsIntList.none { it != 0 }) {
             LazyColumn(
                 modifier = Modifier
-                    .border(1.dp, DefaultBackgroundColorReverse)
+                    .border(1.dp, Color.DarkGray)
                     .fillMaxWidth()
             ) {
                 items(multipleIps.size) { multipleIPsIndex ->
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Button(
                             onClick = {
+                                currentDomain.value = searchText.value
                                 searchText.value = multipleIps[multipleIPsIndex].value
                                 multipleIps.clear()
                                 isButtonClicked.value = true
@@ -1396,7 +928,7 @@ fun MainColumn(
                                 containerColor = ButtonEnabledColor,
                                 contentColor = DefaultBackgroundColor,
                                 disabledContainerColor = Color.Gray,
-                                disabledContentColor = Color.LightGray
+                                disabledContentColor = Color.DarkGray
                             )
                         ) {
                             Text(multipleIps[multipleIPsIndex].value)
@@ -1409,7 +941,7 @@ fun MainColumn(
         LazyColumn(
             state = listState,
             modifier = Modifier
-                .border(1.dp, DefaultBackgroundColorReverse)
+                .border(1.dp, Color.DarkGray)
             //.padding(bottom = 1.dp)
         ) {
             items(gridDataList.size) { gridDataListItemIndex ->
@@ -1492,7 +1024,7 @@ fun MainColumn(
                         HorizontalDivider(
                             modifier = Modifier,
                             thickness = 1.dp,
-                            color = Color.Yellow
+                            color = Color.DarkGray
                         )
                     }
 
@@ -1554,7 +1086,8 @@ fun SearchBar(
             unfocusedContainerColor = DefaultBackgroundColor,
             focusedContainerColor = DefaultBackgroundColor,
             focusedTextColor = DefaultBackgroundColorReverse,
-            unfocusedTextColor = DefaultBackgroundColorReverse
+            unfocusedTextColor = DefaultBackgroundColorReverse,
+            unfocusedIndicatorColor = Color.DarkGray
         ),
         placeholder = {
             Text("Insert Host, IPv4 or IPv6", color = DefaultBackgroundColorReverse)

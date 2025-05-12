@@ -82,11 +82,14 @@ import java.util.regex.Pattern
 import kotlin.random.Random
 
 
+const val MAGIC_NEGATIVE_INT= -114514
+const val IPV4_IDENTIFIER = "IPv4"
+const val IPV6_IDENTIFIER = "IPv6"
+const val HOSTNAME_IDENTIFIER = "Hostname"
+const val ERROR_IDENTIFIER = "ERR"
+const val MAGIC_UUID = "e3ee9949-bd5f-401c-8a57-395a98ed40ee"
+
 class TracerouteHandler {
-    val IPV4IDENTIFIER = "IPv4"
-    val IPV6IDENTIFIER = "IPv6"
-    val HOSTNAMEIDENTIFIER = "Hostname"
-    val ERRORIDENTIFIER = "ERR"
 
 
     fun testNativePing(
@@ -925,7 +928,7 @@ class TracerouteHandler {
         val lastHopCursor = remember { mutableIntStateOf(114514) }
         lastHopCursor.intValue = 114514
         var nativeStatus = remember { MutableList(maxTTL.intValue) { mutableIntStateOf(0) } }
-        if (inputType.value == IPV4IDENTIFIER) {
+        if (inputType.value == IPV4_IDENTIFIER) {
             nativeStatus = MutableList(maxTTL.intValue) { mutableIntStateOf(0) }
             for ((index, item) in gridDataList.withIndex()) {
                 LaunchedEffect(Unit) {
@@ -969,7 +972,7 @@ class TracerouteHandler {
             }
 
 
-        } else if (inputType.value == IPV6IDENTIFIER) {
+        } else if (inputType.value == IPV6_IDENTIFIER) {
             nativeStatus = MutableList(maxTTL.intValue) { mutableIntStateOf(0) }
             for ((index, item) in gridDataList.withIndex()) {
                 LaunchedEffect(Unit) {
@@ -1012,7 +1015,7 @@ class TracerouteHandler {
             }
 
 
-        } else if (inputType.value == HOSTNAMEIDENTIFIER) {
+        } else if (inputType.value == HOSTNAME_IDENTIFIER) {
             isDNSInProgress.value = true
             val dnsThreadsList = mutableListOf(0)
             ResolveHandler(
@@ -1064,7 +1067,7 @@ class TracerouteHandler {
             Toast.makeText(context, "Invalid input! Wait 2 Seconds", Toast.LENGTH_LONG).show()
         }
 
-        if (inputType.value == IPV4IDENTIFIER || inputType.value == IPV6IDENTIFIER) {
+        if (inputType.value == IPV4_IDENTIFIER || inputType.value == IPV6_IDENTIFIER) {
 
             LaunchedEffect(Unit) {
                 scope.launch(Dispatchers.IO) {
@@ -1273,7 +1276,7 @@ class TracerouteHandler {
     ) {
         //in case input ip as the server name
         val nameType = identifyInput(name)
-        if (nameType == IPV4IDENTIFIER || nameType == IPV6IDENTIFIER) {
+        if (nameType == IPV4_IDENTIFIER || nameType == IPV6_IDENTIFIER) {
             if (multipleIpStateMode) {
                 if (multipleIpsState.none { it.value == name }) {
                     multipleIpsState.add(remember { mutableStateOf(name) })
@@ -1374,11 +1377,7 @@ class TracerouteHandler {
                             val lookupARecords = Lookup(name, Type.A)
                             val lookupARecordsSimpleResolver =
                                 SimpleResolver(tracerouteDNSServer.value)
-                            if (currentDNSMode.value == "tcp") {
-                                lookupARecordsSimpleResolver.tcp = true
-                            } else {
-                                lookupARecordsSimpleResolver.tcp = false
-                            }
+                            lookupARecordsSimpleResolver.tcp = currentDNSMode.value == "tcp"
                             lookupARecords.setResolver(lookupARecordsSimpleResolver)
 
 
@@ -1525,11 +1524,7 @@ class TracerouteHandler {
 
                             val lookupAAAARecordsSimpleResolver =
                                 SimpleResolver(tracerouteDNSServer.value)
-                            if (currentDNSMode.value == "tcp") {
-                                lookupAAAARecordsSimpleResolver.tcp = true
-                            } else {
-                                lookupAAAARecordsSimpleResolver.tcp = false
-                            }
+                            lookupAAAARecordsSimpleResolver.tcp = currentDNSMode.value == "tcp"
                             lookupAAAARecords.setResolver(lookupAAAARecordsSimpleResolver)
 
                             val aAAARecords = lookupAAAARecords.run()
@@ -1818,11 +1813,7 @@ class TracerouteHandler {
                             val lookupCNAMERecords = Lookup(name, Type.CNAME)
                             val lookupCNAMERecordsSimpleResolver =
                                 SimpleResolver(tracerouteDNSServer.value)
-                            if (currentDNSMode.value == "tcp") {
-                                lookupCNAMERecordsSimpleResolver.tcp = true
-                            } else {
-                                lookupCNAMERecordsSimpleResolver.tcp = false
-                            }
+                            lookupCNAMERecordsSimpleResolver.tcp = currentDNSMode.value == "tcp"
                             lookupCNAMERecords.setResolver(lookupCNAMERecordsSimpleResolver)
 
                             val cNAMERecords = lookupCNAMERecords.run()
@@ -1837,11 +1828,8 @@ class TracerouteHandler {
 
                                                 val lookupARecordsCNAMESimpleResolver =
                                                     SimpleResolver(tracerouteDNSServer.value)
-                                                if (currentDNSMode.value == "tcp") {
-                                                    lookupARecordsCNAMESimpleResolver.tcp = true
-                                                } else {
-                                                    lookupARecordsCNAMESimpleResolver.tcp = false
-                                                }
+                                                lookupARecordsCNAMESimpleResolver.tcp =
+                                                    currentDNSMode.value == "tcp"
                                                 lookupARecordsCNAME.setResolver(
                                                     lookupARecordsCNAMESimpleResolver
                                                 )
@@ -1885,11 +1873,8 @@ class TracerouteHandler {
 
                                                 val lookupAAAARecordsCNAMESimpleResolver =
                                                     SimpleResolver(tracerouteDNSServer.value)
-                                                if (currentDNSMode.value == "tcp") {
-                                                    lookupAAAARecordsCNAMESimpleResolver.tcp = true
-                                                } else {
-                                                    lookupAAAARecordsCNAMESimpleResolver.tcp = false
-                                                }
+                                                lookupAAAARecordsCNAMESimpleResolver.tcp =
+                                                    currentDNSMode.value == "tcp"
                                                 lookupAAAARecordsCNAME.setResolver(
                                                     lookupAAAARecordsCNAMESimpleResolver
                                                 )
@@ -2115,11 +2100,7 @@ class TracerouteHandler {
                                     val lookup = Lookup(query.toString(), Type.PTR)
                                     val lookupSimpleResolver =
                                         SimpleResolver(tracerouteDNSServer.value)
-                                    if (currentDNSMode.value == "tcp") {
-                                        lookupSimpleResolver.tcp = true
-                                    } else {
-                                        lookupSimpleResolver.tcp = false
-                                    }
+                                    lookupSimpleResolver.tcp = currentDNSMode.value == "tcp"
                                     lookup.setResolver(lookupSimpleResolver)
 
                                     val records = lookup.run()
@@ -2293,11 +2274,7 @@ class TracerouteHandler {
 
                                     val lookup6SimpleResolver =
                                         SimpleResolver(tracerouteDNSServer.value)
-                                    if (currentDNSMode.value == "tcp") {
-                                        lookup6SimpleResolver.tcp = true
-                                    } else {
-                                        lookup6SimpleResolver.tcp = false
-                                    }
+                                    lookup6SimpleResolver.tcp = currentDNSMode.value == "tcp"
                                     lookup6.setResolver(lookup6SimpleResolver)
 
                                     val records6 = lookup6.run()
@@ -2359,18 +2336,18 @@ class TracerouteHandler {
         try {
             var command: String
             val ipType = identifyInput(ip)
-            if (ipType == IPV4IDENTIFIER) {
+            if (ipType == IPV4_IDENTIFIER) {
                 command = "ping -n -c $count -W $timeout -t $ttl $ip"
                 if (ttl == "") {
                     command = "ping -n -c $count -W $timeout $ip"
                 }
-            } else if (ipType == IPV6IDENTIFIER) {
+            } else if (ipType == IPV6_IDENTIFIER) {
                 command = "ping6 -n -c $count -W $timeout -t $ttl $ip"
                 if (ttl == "") {
                     command = "ping6 -n -c $count -W $timeout $ip"
                 }
             } else {
-                return ERRORIDENTIFIER
+                return ERROR_IDENTIFIER
             }
             val process = Runtime.getRuntime().exec(command)
             process.waitFor()
@@ -2392,7 +2369,7 @@ class TracerouteHandler {
             return stdOutput.toString()
         } catch (e: Exception) {
             Log.e("nativePingHandler", "",e)
-            return ERRORIDENTIFIER
+            return ERROR_IDENTIFIER
         }
 
 
@@ -2413,19 +2390,19 @@ class TracerouteHandler {
 
         )
         if (ipv4Pattern.matcher(input).matches()) {
-            return IPV4IDENTIFIER
+            return IPV4_IDENTIFIER
         }
 
         if (ipv6Pattern1.matcher(input).matches()) {
-            return IPV6IDENTIFIER
+            return IPV6_IDENTIFIER
         }
         if (ipv6Pattern2.matcher(input).matches()) {
-            return IPV6IDENTIFIER
+            return IPV6_IDENTIFIER
         }
         if (hostnamePattern.matcher(input).matches()) {
-            return HOSTNAMEIDENTIFIER
+            return HOSTNAME_IDENTIFIER
         }
-        return ERRORIDENTIFIER
+        return ERROR_IDENTIFIER
 
     }
 

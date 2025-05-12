@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -25,8 +27,8 @@ android {
         applicationId = "com.surfaceocean.nexttraceroute"
         minSdk = 21
         targetSdk = 35
-        versionCode = 10
-        versionName = "0.1.0"
+        versionCode = 11
+        versionName = "0.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -73,6 +75,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    sourceSets {
+        val debug by getting
+        debug.kotlin.srcDir("build/generated/ksp/debug/kotlin")
+        val release by getting
+        release.kotlin.srcDir("build/generated/ksp/release/kotlin")
+    }
 //    externalNativeBuild {
 //        cmake {
 //            path = file("src/main/cpp/CMakeLists.txt")
@@ -95,6 +103,7 @@ dependencies {
 //    implementation(libs.androidx.ui.graphics)
 //    implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
 //    testImplementation(libs.junit)
 //    androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -102,4 +111,7 @@ dependencies {
 //    androidTestImplementation(libs.androidx.ui.test.junit4)
 //    debugImplementation(libs.androidx.ui.tooling)
 //    debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp         (libs.room.compiler)
 }
