@@ -1,0 +1,2 @@
+1.Updated dependencies to the latest version.
+2.Switched to using GitHub Actions for automatic builds.

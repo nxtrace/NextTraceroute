@@ -1,0 +1,6 @@
+1.Remove includeInBundle line in dependenciesInfo
+2.Replace deprecated API
+3.Update JDK version to 21
+4.Fix white status bar
+5.Upgrade Android SDK version from 34 to 35
+6.Upgrade dependencies

@@ -1,0 +1,5 @@
+1.Add history and search suggestions
+2.Update major version of kotlin to 2.1
+3.Initiate dnsjava context in MainActivity to prevent warnings
+4.Optimize UI colors
+5.Add the target IP and domain to result string

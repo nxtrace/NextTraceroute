@@ -1,0 +1,1 @@
+NextTraceroute is a root-free route tracing application that defaults to using the NextTrace API. Enter target address (IPv4, IPv6, Hostname and URL), press run, and enjoy!
