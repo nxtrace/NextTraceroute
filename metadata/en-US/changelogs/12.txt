@@ -1,0 +1,4 @@
+1. Unable to strip libandroidx.graphics.path.so, packaging them as they are.
+2. Update Gradle from 8.11.1 to 8.14.
+3. add distributionSha256Sum to Gradle in order to prevent insecure gradlew.
+4. Enable exportSchema in Room Database.
