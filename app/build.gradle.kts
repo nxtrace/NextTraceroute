@@ -73,6 +73,8 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Unable to strip the following libraries, packaging them as they are:
+            jniLibs.keepDebugSymbols.add("**/libandroidx.graphics.path.so")
         }
     }
     sourceSets {
@@ -80,6 +82,9 @@ android {
         debug.kotlin.srcDir("build/generated/ksp/debug/kotlin")
         val release by getting
         release.kotlin.srcDir("build/generated/ksp/release/kotlin")
+    }
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
     }
 //    externalNativeBuild {
 //        cmake {

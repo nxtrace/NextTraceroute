@@ -146,7 +146,7 @@ interface HistoryDao {
     suspend fun deleteAll(): Int
 }
 
-@Database(entities = [HistoryData::class], version = 1)
+@Database(entities = [HistoryData::class], version = 1, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao
 }
