@@ -53,6 +53,14 @@ The following are all the social media and contact methods of the main maintaine
 
   答：这可能是自动扫描的误报。我们已经向相关的反恶意软件提供商报告了这个问题，请确保您的病毒库更新到最新版本。只有此GitHub页面提到的二进制软件下载方法才是作者发布的，请小心其他来源的此软件。
 
+* Q: Why are there no geographical locations displayed?
+
+  问：为什么地理位置没显示？
+  
+  A: If error messages like "Too many requests" are displayed, try again later due to server rate limiting. If there are no error messages, try changing your DNS server, or switching the DNS mode to DoH in the settings.
+
+  答：如果显示"Too many requests"就过一会再试，服务器有速率限制。如果没有错误信息就在设置里更换DNS服务器，或把DNS模式改为DoH.
+
 # Example Screenshot
 ![example1](./pic/1.png)
 ![example2](./pic/2.png)
