@@ -65,6 +65,7 @@ The following are all the social media and contact methods of the main maintaine
 ![example1](./pic/1.png)
 ![example2](./pic/2.png)
 ![examplesettings](./pic/settings.png)
+![exampleHistory](./pic/history.jpg)
 
 # LICENSE
 ```
