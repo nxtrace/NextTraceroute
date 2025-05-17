@@ -1,0 +1,4 @@
+1. Update gradle toolchain to 8.14
+2. Fix random blank screen in history page
+3. Fix a crash caused by invalid URL in MapTrace
+4. Optimize the display of reserved IP CIDR
