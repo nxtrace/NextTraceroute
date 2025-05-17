@@ -56,6 +56,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -168,6 +169,7 @@ fun HistoryPage(
     val clearDBToastInfo = remember { mutableStateOf("") }
     val showDeleteAllWarningDialog = remember { mutableStateOf(false) }
     val currentDeletionUUID = remember { mutableStateOf(MAGIC_UUID) }
+    val isDatabaseLoadFinished = remember { mutableStateOf(false) }
     if (clearDBToastInfo.value != "") {
         Toast.makeText(
             context,
@@ -180,6 +182,7 @@ fun HistoryPage(
     LaunchedEffect(isDeleteAllTriggered.value) {
         scope.launch(Dispatchers.IO) {
             if (isDeleteAllTriggered.value) {
+                isDatabaseLoadFinished.value = false
                 try {
                     db.withTransaction {
                         historyDao.deleteAll()
@@ -199,11 +202,13 @@ fun HistoryPage(
         scope.launch(Dispatchers.IO) {
             if (isDatabaseUpdateTriggered.value) {
                 db.withTransaction {
+                    isDatabaseLoadFinished.value = false
                     val list = historyDao.getAll()
                     allData.clear()
                     allData.addAll(list)
-//                clearDBToastInfo.value="Refreshed!"
+//                    clearDBToastInfo.value=allData.size.toString()
                     isDatabaseUpdateTriggered.value = false
+                    isDatabaseLoadFinished.value = true
                 }
             }
         }
@@ -214,6 +219,7 @@ fun HistoryPage(
     LaunchedEffect(currentDeletionUUID.value) {
         scope.launch(Dispatchers.IO) {
             if (currentDeletionUUID.value != MAGIC_UUID) {
+                isDatabaseLoadFinished.value = false
                 try {
                     db.withTransaction {
                         historyDao.deleteByUuid(uuid = currentDeletionUUID.value)
@@ -305,197 +311,208 @@ fun HistoryPage(
     }
     Spacer(modifier = Modifier.height(8.dp))
 
-    LazyColumn(
-        modifier = Modifier
-            .border(1.dp, DefaultBackgroundColorReverse)
-            .fillMaxWidth()
-    ) {
-        itemsIndexed(allData) { allDataIndex, item ->
-            val preShareText = "Date:" + SimpleDateFormat(
-                "yyyy-MM-dd HH:mm:ss",
-                Locale.getDefault()
-            ).format(Date(item.timeStamp)) + "\n"
-            Row(
-                modifier = Modifier
-                    .border(1.dp, DefaultBackgroundColorReverse)
-                    .padding(bottom = 1.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
+    //Remember the scrolling state after deleting an item
+    val listState = rememberLazyListState()
+    //To prevent recompose when allData is updating
+    if (isDatabaseLoadFinished.value) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .border(1.dp, DefaultBackgroundColorReverse)
+                .fillMaxWidth()
+        ) {
+            itemsIndexed(items = allData, key = { _, item -> item.uuid }) { allDataIndex, item ->
+                val preShareText = "Date:" + SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss",
+                    Locale.getDefault()
+                ).format(Date(item.timeStamp)) + "\n"
+                Row(
                     modifier = Modifier
-                        .weight(1f)
+                        .border(1.dp, DefaultBackgroundColorReverse)
                         .padding(bottom = 1.dp),
-                    horizontalAlignment = Alignment.Start,
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        color = Color.Green,
-                        text = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(
-                            Date(item.timeStamp)
-                        ),
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                    //val ipText= remember{mutableStateOf(item.ip)}
-                    if (item.ip != "") {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .pointerInput(item.ip) {
-                                    detectTapGestures(
-                                        onLongPress = {
-                                            clipboardManager.setPrimaryClip(
-                                                ClipData.newPlainText(
-                                                    "simple text",
-                                                    item.ip
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(bottom = 1.dp),
+                        horizontalAlignment = Alignment.Start,
+                    ) {
+                        Text(
+                            color = Color.Green,
+                            text = SimpleDateFormat(
+                                "yyyy-MM-dd HH:mm:ss",
+                                Locale.getDefault()
+                            ).format(
+                                Date(item.timeStamp)
+                            ),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                        //val ipText= remember{mutableStateOf(item.ip)}
+                        if (item.ip != "") {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .pointerInput(item.ip) {
+                                        detectTapGestures(
+                                            onLongPress = {
+                                                clipboardManager.setPrimaryClip(
+                                                    ClipData.newPlainText(
+                                                        "simple text",
+                                                        item.ip
+                                                    )
                                                 )
-                                            )
-                                            Toast.makeText(
-                                                context,
-                                                "Copied!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        },
-                                        onTap = {
-                                            val tapURL = "https://bgp.tools/search?q=${item.ip}"
-                                            context.startActivity(
-                                                Intent(
-                                                    Intent.ACTION_VIEW,
-                                                    tapURL.toUri()
+                                                Toast.makeText(
+                                                    context,
+                                                    "Copied!",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            },
+                                            onTap = {
+                                                val tapURL = "https://bgp.tools/search?q=${item.ip}"
+                                                context.startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_VIEW,
+                                                        tapURL.toUri()
+                                                    )
                                                 )
-                                            )
 
-                                        }
-                                    )
-                                },
-
-                            ) {
-                            Text(
-                                color = Color.Yellow,
-                                text = item.ip,
-                                modifier = Modifier.padding(start = 4.dp)
-                            )
-
-                        }
-                    }
-                    //val domainText=remember{mutableStateOf(item.domain)}
-                    if (item.domain != "") {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .pointerInput(item.domain) {
-                                    detectTapGestures(
-                                        onLongPress = {
-                                            clipboardManager.setPrimaryClip(
-                                                ClipData.newPlainText(
-                                                    "simple text",
-                                                    item.domain
-                                                )
-                                            )
-                                            Toast.makeText(
-                                                context,
-                                                "Copied!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        },
-                                        onTap = {
-                                            val tapURL = "https://bgp.tools/search?q=${item.domain}"
-                                            context.startActivity(
-                                                Intent(
-                                                    Intent.ACTION_VIEW,
-                                                    tapURL.toUri()
-                                                )
-                                            )
-
-                                        }
-                                    )
-                                },
-
-                            ) {
-                            Text(
-                                color = Color.Cyan,
-                                text = item.domain,
-                                modifier = Modifier.padding(start = 4.dp)
-                            )
-
-                        }
-                    }
-                }
-                val currentItemCursor = remember { mutableIntStateOf(MAGIC_NEGATIVE_INT) }
-                IconButton(
-                    onClick = {
-                        currentItemCursor.intValue = allDataIndex
-
-                    }) {
-                    Icon(Icons.Filled.Info, contentDescription = "Info", tint = Color.White)
-                }
-                if (currentItemCursor.intValue == allDataIndex) {
-                    val scrollState = rememberScrollState()
-                    AlertDialog(
-                        onDismissRequest = {
-                            currentItemCursor.intValue = MAGIC_NEGATIVE_INT
-                        },
-                        title = {
-                            Text(text = item.uuid)
-                        },
-                        text = {
-                            Column(modifier = Modifier.verticalScroll(scrollState)) {
-                                Text(preShareText + item.history)
-                            }
-
-                        },
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    clipboardManager.setPrimaryClip(
-                                        ClipData.newPlainText(
-                                            "simple text",
-                                            preShareText + item.history
+                                            }
                                         )
-                                    )
-                                    Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT).show()
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = ButtonEnabledColor,
-                                    contentColor = DefaultBackgroundColor,
-                                    disabledContainerColor = Color.Gray,
-                                    disabledContentColor = Color.LightGray
+                                    },
+
+                                ) {
+                                Text(
+                                    color = Color.Yellow,
+                                    text = item.ip,
+                                    modifier = Modifier.padding(start = 4.dp)
                                 )
-                            ) {
-                                Text("Copy")
-                            }
-                        },
-                        dismissButton = {
-                            Button(
-                                onClick = {
-                                    currentItemCursor.intValue = MAGIC_NEGATIVE_INT
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = ButtonEnabledColor,
-                                    contentColor = DefaultBackgroundColor,
-                                    disabledContainerColor = Color.Gray,
-                                    disabledContentColor = Color.LightGray
-                                )
-                            ) {
-                                Text("OK")
+
                             }
                         }
-                    )
-                }
-                IconButton(onClick = {
-                    val shareIntent = Intent().apply {
-                        action = Intent.ACTION_SEND
-                        putExtra(Intent.EXTRA_TEXT, preShareText + item.history)
-                        type = "text/plain"
-                    }
-                    val chooser = Intent.createChooser(shareIntent, "Share to")
-                    context.startActivity(chooser)
-                }) {
-                    Icon(Icons.Filled.Share, contentDescription = "Share", tint = Color.White)
-                }
-                IconButton(onClick = { currentDeletionUUID.value = item.uuid }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
-                }
+                        //val domainText=remember{mutableStateOf(item.domain)}
+                        if (item.domain != "") {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .pointerInput(item.domain) {
+                                        detectTapGestures(
+                                            onLongPress = {
+                                                clipboardManager.setPrimaryClip(
+                                                    ClipData.newPlainText(
+                                                        "simple text",
+                                                        item.domain
+                                                    )
+                                                )
+                                                Toast.makeText(
+                                                    context,
+                                                    "Copied!",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            },
+                                            onTap = {
+                                                val tapURL =
+                                                    "https://bgp.tools/search?q=${item.domain}"
+                                                context.startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_VIEW,
+                                                        tapURL.toUri()
+                                                    )
+                                                )
 
+                                            }
+                                        )
+                                    },
+
+                                ) {
+                                Text(
+                                    color = Color.Cyan,
+                                    text = item.domain,
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+
+                            }
+                        }
+                    }
+                    val currentItemCursor = remember { mutableIntStateOf(MAGIC_NEGATIVE_INT) }
+                    IconButton(
+                        onClick = {
+                            currentItemCursor.intValue = allDataIndex
+
+                        }) {
+                        Icon(Icons.Filled.Info, contentDescription = "Info", tint = Color.White)
+                    }
+                    if (currentItemCursor.intValue == allDataIndex) {
+                        val scrollState = rememberScrollState()
+                        AlertDialog(
+                            onDismissRequest = {
+                                currentItemCursor.intValue = MAGIC_NEGATIVE_INT
+                            },
+                            title = {
+                                Text(text = item.uuid)
+                            },
+                            text = {
+                                Column(modifier = Modifier.verticalScroll(scrollState)) {
+                                    Text(preShareText + item.history)
+                                }
+
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        clipboardManager.setPrimaryClip(
+                                            ClipData.newPlainText(
+                                                "simple text",
+                                                preShareText + item.history
+                                            )
+                                        )
+                                        Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT)
+                                            .show()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = ButtonEnabledColor,
+                                        contentColor = DefaultBackgroundColor,
+                                        disabledContainerColor = Color.Gray,
+                                        disabledContentColor = Color.LightGray
+                                    )
+                                ) {
+                                    Text("Copy")
+                                }
+                            },
+                            dismissButton = {
+                                Button(
+                                    onClick = {
+                                        currentItemCursor.intValue = MAGIC_NEGATIVE_INT
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = ButtonEnabledColor,
+                                        contentColor = DefaultBackgroundColor,
+                                        disabledContainerColor = Color.Gray,
+                                        disabledContentColor = Color.LightGray
+                                    )
+                                ) {
+                                    Text("OK")
+                                }
+                            }
+                        )
+                    }
+                    IconButton(onClick = {
+                        val shareIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, preShareText + item.history)
+                            type = "text/plain"
+                        }
+                        val chooser = Intent.createChooser(shareIntent, "Share to")
+                        context.startActivity(chooser)
+                    }) {
+                        Icon(Icons.Filled.Share, contentDescription = "Share", tint = Color.White)
+                    }
+                    IconButton(onClick = { currentDeletionUUID.value = item.uuid }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
+                    }
+
+                }
             }
         }
     }

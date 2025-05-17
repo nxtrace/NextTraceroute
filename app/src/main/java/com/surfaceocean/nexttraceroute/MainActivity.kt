@@ -43,6 +43,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -66,6 +67,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -834,7 +836,7 @@ fun MainColumn(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            if (traceMapURL.value != "") {
+            if (traceMapURL.value != "" && Patterns.WEB_URL.matcher(traceMapURL.value).matches()) {
                 Button(
                     onClick = {
                         context.startActivity(
@@ -914,12 +916,14 @@ fun MainColumn(
                     .border(1.dp, Color.DarkGray)
                     .fillMaxWidth()
             ) {
-                items(multipleIps.size) { multipleIPsIndex ->
+                itemsIndexed(
+                    items = multipleIps,
+                    key = { _, item -> item.value }) { _, multipleIPItem ->
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Button(
                             onClick = {
                                 currentDomain.value = searchText.value
-                                searchText.value = multipleIps[multipleIPsIndex].value
+                                searchText.value = multipleIPItem.value
                                 multipleIps.clear()
                                 isButtonClicked.value = true
 
@@ -931,7 +935,7 @@ fun MainColumn(
                                 disabledContentColor = Color.DarkGray
                             )
                         ) {
-                            Text(multipleIps[multipleIPsIndex].value)
+                            Text(multipleIPItem.value)
                         }
                     }
                 }
@@ -944,8 +948,7 @@ fun MainColumn(
                 .border(1.dp, Color.DarkGray)
             //.padding(bottom = 1.dp)
         ) {
-            items(gridDataList.size) { gridDataListItemIndex ->
-                val gridDataListItem = gridDataList[gridDataListItemIndex]
+            itemsIndexed(items = gridDataList) { _, gridDataListItem ->
                 //for ((gridDataListItemIndex, gridDataListItem) in gridDataList.withIndex()) {
                 for ((gridDataIndex, gridDataItem) in gridDataListItem.withIndex()) {
                     val arrangementForOneColumn =

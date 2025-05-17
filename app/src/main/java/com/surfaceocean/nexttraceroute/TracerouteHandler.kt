@@ -49,6 +49,8 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import inet.ipaddr.AddressStringException
+import inet.ipaddr.IPAddress
 import inet.ipaddr.IPAddressString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,12 +84,60 @@ import java.util.regex.Pattern
 import kotlin.random.Random
 
 
-const val MAGIC_NEGATIVE_INT= -114514
+const val MAGIC_NEGATIVE_INT = -114514
 const val IPV4_IDENTIFIER = "IPv4"
 const val IPV6_IDENTIFIER = "IPv6"
 const val HOSTNAME_IDENTIFIER = "Hostname"
 const val ERROR_IDENTIFIER = "ERR"
 const val MAGIC_UUID = "e3ee9949-bd5f-401c-8a57-395a98ed40ee"
+
+val RESERVED_IPV4_CIDR = mapOf(
+    "0.0.0.0/8" to "RFC1122",
+    "100.64.0.0/10" to "RFC6598",
+    "127.0.0.0/8" to "RFC1122",
+    "169.254.0.0/16" to "RFC3927",
+    "192.0.0.0/24" to "RFC6890",
+    "192.0.2.0/24" to "RFC5737",
+    "192.88.99.0/24" to "RFC3068",
+    "198.18.0.0/15" to "RFC2544",
+    "198.51.100.0/24" to "RFC5737",
+    "203.0.113.0/24" to "RFC5737",
+    "224.0.0.0/4" to "RFC5771",
+    "255.255.255.255/32" to "RFC0919",
+    "240.0.0.0/4" to "RFC1112",
+    "10.0.0.0/8" to "RFC1918",
+    "172.16.0.0/12" to "RFC1918",
+    "192.168.0.0/16" to "RFC1918",
+    "192.52.193.0/24" to "RFC7450",
+    "6.0.0.0/8" to "DoD",
+    "7.0.0.0/8" to "DoD",
+    "11.0.0.0/8" to "DoD",
+    "21.0.0.0/8" to "DoD",
+    "22.0.0.0/8" to "DoD",
+    "26.0.0.0/8" to "DoD",
+    "28.0.0.0/8" to "DoD",
+    "29.0.0.0/8" to "DoD",
+    "30.0.0.0/8" to "DoD",
+    "33.0.0.0/8" to "DoD",
+    "55.0.0.0/8" to "DoD",
+    "214.0.0.0/8" to "DoD",
+    "215.0.0.0/8" to "DoD"
+
+)
+
+val RESERVED_IPV6_CIDR = mapOf(
+    "fe80::/10" to "RFC4291",
+    "ff00::/8" to "RFC4291",
+    "fec0::/10" to "RFC3879",
+    "fe00::/9" to "RFC4291",
+    "64:ff9b::/96" to "RFC6052",
+    "0::/96" to "RFC4291",
+    "64:ff9b:1::/48" to "RFC6052",
+    "2001:db8::/32" to "RFC3849",
+    "2002::/16" to "RFC3056",
+    "fc00::/7" to "RFC4193"
+)
+
 
 class TracerouteHandler {
 
@@ -101,7 +151,7 @@ class TracerouteHandler {
             val process = Runtime.getRuntime().exec("ping")
             process.waitFor()
         } catch (e: Exception) {
-            Log.e("testNativePing", "",e)
+            Log.e("testNativePing", "", e)
             v4Status.value = false
         }
         try {
@@ -109,7 +159,7 @@ class TracerouteHandler {
             process6.waitFor()
 
         } catch (e: Exception) {
-            Log.e("testNativePing","",e)
+            Log.e("testNativePing", "", e)
             v6Status.value = false
         }
         if (v4Status.value && v6Status.value) {
@@ -402,7 +452,54 @@ class TracerouteHandler {
                                     wsTempDataMap["currentIP"] = item[0][1].value
                                     wsTempDataMap["currentIndex"] = index
                                     wsTempDataMap["isApiSuccessful"] = false
-                                    webSocketReq.send(wsTempDataMap["currentIP"] as String)
+                                    val reservedCIDRReturn = reservedIPFilter(item[0][1].value)
+                                    if (reservedCIDRReturn == "") {
+                                        webSocketReq.send(wsTempDataMap["currentIP"] as String)
+                                    } else {
+                                        //Reserved IP
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][0][2].value =
+                                            reservedCIDRReturn
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][0][3].value =
+                                            "*"
+                                        gridDataList[wsTempDataMap["currentIndex"] as Int][1][0].value =
+                                            reservedCIDRReturn
+                                        val mapTraceSingleData = mutableMapOf(
+                                            "Success" to true,
+                                            "Address" to mapOf(
+                                                "IP" to wsTempDataMap["currentIP"].toString(),
+                                                "zone" to ""
+                                            ),
+                                            "Hostname" to "",
+                                            "TTL" to (wsTempDataMap["currentIndex"] as Int) + 1,
+                                            //"RTT" to 114514,
+                                            "Error" to null,
+                                            "Geo" to mutableMapOf(
+                                                "ip" to "",
+                                                "asnumber" to reservedCIDRReturn,
+                                                "country" to "",
+                                                "country_en" to "",
+                                                "prov" to "",
+                                                "prov_en" to "",
+                                                "city" to "",
+                                                "city_en" to "",
+                                                "district" to "",
+                                                "owner" to "",
+                                                "isp" to "",
+                                                "domain" to "",
+                                                "whois" to reservedCIDRReturn,
+                                                "lat" to 0,
+                                                "lng" to 0,
+                                                "prefix" to "",
+                                                "router" to mapOf<Any, Any>(),
+                                                "source" to ""
+                                            ),
+                                            "Lang" to "cn",
+                                            "MPLS" to null
+                                        )
+                                        traceMapThreadsMapList.add(listOf(mapTraceSingleData))
+                                        wsTempDataMap["isApiSuccessful"] = true
+
+                                    }
                                     while (maxAPIRetries > 0) {
                                         delay(timeMillis = 200)
                                         //testAPIText.value=item[0][1].value+wsTempDataMap["currentIP"].toString()+" "+wsTempDataMap["currentIndex"].toString()+" "+wsTempDataMap["isApiSuccessful"].toString()+" "+System.currentTimeMillis().toString()
@@ -446,7 +543,7 @@ class TracerouteHandler {
 
 
                     } catch (e: Exception) {
-                        Log.e("mainWSHandler","",e)
+                        Log.e("mainWSHandler", "", e)
                         maxReconnects -= 1
                         delay(timeMillis = 1000)
                         continue
@@ -602,7 +699,7 @@ class TracerouteHandler {
 
 
                                 } catch (e: Exception) {
-                                    Log.e("APIDNSHandler", "",e)
+                                    Log.e("APIDNSHandler", "", e)
                                     delay(timeMillis = 200)
                                     continue
                                 }
@@ -836,7 +933,7 @@ class TracerouteHandler {
                                             } catch (e: Exception) {
                                                 Log.e(
                                                     "APIPowHandler",
-                                                    "",e
+                                                    "", e
                                                 )
                                                 continue
                                             }
@@ -855,7 +952,7 @@ class TracerouteHandler {
 
 
                                 } catch (e: Exception) {
-                                    Log.e("APIPowHandler", "",e)
+                                    Log.e("APIPowHandler", "", e)
                                     delay(200)
                                     continue
                                 }
@@ -949,9 +1046,9 @@ class TracerouteHandler {
                             }
                         } else {
                             item[0][0].value = (index + 1).toString()
-                            if(traceroute4RegexResult!=""){
+                            if (traceroute4RegexResult != "") {
                                 item[0][1].value = traceroute4RegexResult
-                            }else{
+                            } else {
                                 item[0][1].value = "*"
                             }
 
@@ -992,9 +1089,9 @@ class TracerouteHandler {
                             }
                         } else {
                             item[0][0].value = (index + 1).toString()
-                            if(traceroute6RegexResult!=""){
+                            if (traceroute6RegexResult != "") {
                                 item[0][1].value = traceroute6RegexResult
-                            }else{
+                            } else {
                                 item[0][1].value = "*"
                             }
 
@@ -1232,7 +1329,7 @@ class TracerouteHandler {
                             }
                             submitTraceMapCall.close()
                         } catch (e: Exception) {
-                            Log.e("InsertHandler", "",e)
+                            Log.e("InsertHandler", "", e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1350,7 +1447,7 @@ class TracerouteHandler {
 
 
                         } catch (e: Exception) {
-                            Log.e("ResolveHandler", "",e)
+                            Log.e("ResolveHandler", "", e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1404,7 +1501,7 @@ class TracerouteHandler {
                                 }
                             }
                         } catch (e: Exception) {
-                            Log.e("ResolveHandler","",e)
+                            Log.e("ResolveHandler", "", e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1496,7 +1593,7 @@ class TracerouteHandler {
 
 
                         } catch (e: Exception) {
-                            Log.e("ResolveHandler", "",e)
+                            Log.e("ResolveHandler", "", e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1552,7 +1649,7 @@ class TracerouteHandler {
                                 }
                             }
                         } catch (e: Exception) {
-                            Log.e("ResolveHandler","",e)
+                            Log.e("ResolveHandler", "", e)
 
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
@@ -1693,7 +1790,7 @@ class TracerouteHandler {
                                                 } catch (e: Exception) {
                                                     Log.e(
                                                         "ResolveHandlerDOHCNAMEA",
-                                                        "",e
+                                                        "", e
                                                     )
                                                 }
                                                 try {
@@ -1770,7 +1867,7 @@ class TracerouteHandler {
                                                 } catch (e: Exception) {
                                                     Log.e(
                                                         "RHandlerDOHCNAMEAAAA",
-                                                        "",e
+                                                        "", e
                                                     )
                                                 }
 
@@ -1785,7 +1882,7 @@ class TracerouteHandler {
 
 
                         } catch (e: Exception) {
-                            Log.e("ResolveHandler", "",e)
+                            Log.e("ResolveHandler", "", e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1864,7 +1961,7 @@ class TracerouteHandler {
                                             } catch (e: Exception) {
                                                 Log.e(
                                                     "RHandlerCNAMEA",
-                                                    "",e
+                                                    "", e
                                                 )
                                             }
                                             try {
@@ -1910,7 +2007,7 @@ class TracerouteHandler {
                                             } catch (e: Exception) {
                                                 Log.e(
                                                     "RHandlerCNAMEAAAA",
-                                                    "",e
+                                                    "", e
                                                 )
                                             }
 
@@ -1921,7 +2018,7 @@ class TracerouteHandler {
 
 
                         } catch (e: Exception) {
-                            Log.e("ResolveHandler","",e)
+                            Log.e("ResolveHandler", "", e)
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1987,9 +2084,9 @@ class TracerouteHandler {
                                 count = count.value, timeout = timeout.value
                             )
                             val ping4RegexResult = extractRttValues(ping4Result)
-                            if(ping4RegexResult!=""){
+                            if (ping4RegexResult != "") {
                                 item[2][1].value = ping4RegexResult
-                            }else{
+                            } else {
                                 item[2][1].value = "*"
                             }
 
@@ -2067,7 +2164,7 @@ class TracerouteHandler {
 
 
                                     } catch (e: Exception) {
-                                        Log.e("eachHopHandler", "",e)
+                                        Log.e("eachHopHandler", "", e)
                                         threadMutex.withLock {
                                             tracerouteThreadsIntList.indices.forEach { index ->
                                                 if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -2115,7 +2212,7 @@ class TracerouteHandler {
                                         }
                                     }
                                 } catch (e: Exception) {
-                                    Log.e("eachHopHandler", "",e)
+                                    Log.e("eachHopHandler", "", e)
                                     item[2][0].value = "*"
                                     threadMutex.withLock {
                                         tracerouteThreadsIntList.indices.forEach { index ->
@@ -2160,9 +2257,9 @@ class TracerouteHandler {
                                 count = count.value, timeout = timeout.value
                             )
                             val ping6RegexResult = extractRttValues(ping6Result)
-                            if(ping6RegexResult!=""){
+                            if (ping6RegexResult != "") {
                                 item[2][1].value = ping6RegexResult
-                            }else{
+                            } else {
                                 item[2][1].value = "*"
                             }
                             threadMutex.withLock {
@@ -2241,7 +2338,7 @@ class TracerouteHandler {
 
 
                                     } catch (e: Exception) {
-                                        Log.e("eachHopHandler", "",e)
+                                        Log.e("eachHopHandler", "", e)
                                         threadMutex.withLock {
                                             tracerouteThreadsIntList.indices.forEach { index ->
                                                 if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -2288,7 +2385,7 @@ class TracerouteHandler {
                                         }
                                     }
                                 } catch (e: Exception) {
-                                    Log.e("eachHopHandler", "",e)
+                                    Log.e("eachHopHandler", "", e)
                                     item[2][0].value = "*"
                                     threadMutex.withLock {
                                         tracerouteThreadsIntList.indices.forEach { index ->
@@ -2368,7 +2465,7 @@ class TracerouteHandler {
 
             return stdOutput.toString()
         } catch (e: Exception) {
-            Log.e("nativePingHandler", "",e)
+            Log.e("nativePingHandler", "", e)
             return ERROR_IDENTIFIER
         }
 
@@ -2404,6 +2501,34 @@ class TracerouteHandler {
         }
         return ERROR_IDENTIFIER
 
+    }
+
+    private fun reservedIPFilter(input: String): String {
+        val address: IPAddress = try {
+            IPAddressString(input).toAddress()
+        } catch (e: AddressStringException) {
+            return ""
+        }
+        val currentCIDRMap = if (identifyInput(input) == IPV4_IDENTIFIER) {
+            RESERVED_IPV4_CIDR
+        } else if (identifyInput(input) == IPV6_IDENTIFIER) {
+            RESERVED_IPV6_CIDR
+        } else {
+            return ""
+        }
+        for ((cidr, name) in currentCIDRMap) {
+            val subnet = try {
+                IPAddressString(cidr).toAddress()
+            } catch (e: AddressStringException) {
+                Log.e("reservedIPFilterHandler", "", e)
+                return ""
+            }
+            if (subnet.contains(address)) {
+                return name
+            }
+        }
+
+        return ""
     }
 
 
