@@ -1,0 +1,1 @@
+1. update android:configChanges to prevent recomposes from screen rotation
