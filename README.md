@@ -16,15 +16,9 @@ Enter target address (IPv4, IPv6, Hostname and URL), press run, and enjoy!
 
 <a href='https://play.google.com/store/apps/details?id=com.surfaceocean.nexttraceroute&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' width="256" height="96" src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></a>
 <a href='https://apt.izzysoft.de/packages/com.surfaceocean.nexttraceroute'><img alt='Get it on IzzyOnDroid' width="256" height="96" src='https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png'/></a>
-
-Thanks for the warmhearted support from every test user. This app has passed the closed testing, therefore it has entered the Google Play store. 
-
-P.S. Users who have installed the test version can now uninstall it and download the official release from the link above.
-
-感谢所有测试用户的热情支持，本应用已经通过封闭测试，正式进入Google Play商店。
-
-P.S. 已经安装测试版的用户已经可以卸载测试应用，去上述链接下载正式版了。
-
+[<img src="https://f-droid.org/badge/get-it-on.png"
+    alt="Get it on F-Droid"
+    height="96">](https://f-droid.org/packages/com.surfaceocean.nexttraceroute)
 # Contact
 
 The following are all the social media and contact methods of the main maintainer of this project：
