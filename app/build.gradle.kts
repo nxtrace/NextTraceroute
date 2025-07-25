@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -21,11 +22,13 @@ android {
 //        includeInBundle = false
     }
     namespace = "com.surfaceocean.nexttraceroute"
+    //noinspection GradleDependency
     compileSdk = 35
 
     defaultConfig {
         applicationId = "com.surfaceocean.nexttraceroute"
         minSdk = 21
+        //noinspection OldTargetApi
         targetSdk = 35
         versionCode = 14
         versionName = "0.1.4"
@@ -59,16 +62,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-        jvmTarget = "21"
+    kotlin {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_21
+        }
     }
     buildFeatures {
         compose = true
         buildConfig = true
 
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.11"
     }
     packaging {
         resources {

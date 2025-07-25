@@ -517,7 +517,7 @@ fun CheckThreadsStatus(
                 tracerouteThreadsIntList.removeAll { it == 0 }
             }
             //tracerouteThreadsIntList.clear()
-            if (multipleIps.size == 0) {
+            if (multipleIps.isEmpty()) {
                 isSearchBarEnabled.value = true
                 //Add history after all threads are finished
                 val historyData = HistoryData(
@@ -779,7 +779,7 @@ fun MainColumn(
                 }
             }
             DropdownMenu(
-                expanded = isSearchBarEnabled.value && searchDatabaseResultList.size != 0,
+                expanded = isSearchBarEnabled.value && searchDatabaseResultList.isNotEmpty(),
                 properties = PopupProperties(
                     focusable = false,
                     dismissOnClickOutside = true,
@@ -910,7 +910,7 @@ fun MainColumn(
 //        }
         //Select a ip and change
 
-        if (multipleIps.size != 0 && tracerouteThreadsIntList.none { it != 0 }) {
+        if (multipleIps.isNotEmpty() && tracerouteThreadsIntList.none { it != 0 }) {
             LazyColumn(
                 modifier = Modifier
                     .border(1.dp, Color.DarkGray)

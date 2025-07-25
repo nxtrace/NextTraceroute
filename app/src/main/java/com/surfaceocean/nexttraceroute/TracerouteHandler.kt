@@ -177,7 +177,7 @@ class TracerouteHandler {
 
     private fun extractRttValues(inputString: String): String {
         //val regex = """(?i)rtt[^0-9]*(\d+(\.\d+)?)(/(\d+(\.\d+)?))*""".toRegex()
-        val regex = "(?i)^.*rtt.*=\\s*(.*)\$".toRegex(setOf(RegexOption.MULTILINE))
+        val regex = "(?i)^.*rtt.*=\\s*(.*)$".toRegex(setOf(RegexOption.MULTILINE))
         val matchResult = regex.find(inputString)
         //var finalResult=""
         return if (matchResult != null) {
@@ -623,7 +623,7 @@ class TracerouteHandler {
                         if (preferredAPIIp.value != "" && apiToken.value != "") {
                             break
                         }
-                        if (apiDNSList.size != 0) {
+                        if (apiDNSList.isNotEmpty()) {
                             if (preferredAPIIp.value != "" && apiToken.value != "") {
                                 break
                             }
@@ -682,7 +682,7 @@ class TracerouteHandler {
                                         client.newWebSocket(requestBuilder, webSocketListener)
                                     for (j in 1..5) {
                                         if (isRequestSuccessful) {
-                                            webSocketReq.close(1000, "oh, I'm coming")
+                                            webSocketReq.close(1000, "oh, I'm coming$j")
                                             maxTriesOfAPIDNS = -1
                                             threadMutex.withLock {
                                                 tracerouteThreadsIntList.indices.forEach { index ->
@@ -789,7 +789,7 @@ class TracerouteHandler {
                         if (preferredAPIIpPOW.value != "" && apiToken.value != "") {
                             break
                         }
-                        if (apiDNSListPOW.size != 0) {
+                        if (apiDNSListPOW.isNotEmpty()) {
                             if (preferredAPIIpPOW.value != "" && apiToken.value != "") {
                                 break
                             }
@@ -832,7 +832,7 @@ class TracerouteHandler {
                                     }
                                     val requestBuilder = getPOWRequest.build()
                                     val getPOWCall = client.newCall(requestBuilder).execute()
-                                    val getPOWData = getPOWCall.body?.string() ?: ""
+                                    val getPOWData = getPOWCall.body.string()
                                     if (getPOWCall.isSuccessful) {
                                         testAPIText.value = ""
                                         if (getPOWData != "") {
@@ -899,7 +899,7 @@ class TracerouteHandler {
                                                 val submitPOWCall =
                                                     client.newCall(submitBuilder).execute()
                                                 val submitPOWData =
-                                                    submitPOWCall.body?.string() ?: ""
+                                                    submitPOWCall.body.string()
                                                 if (submitPOWCall.isSuccessful) {
                                                     testAPIText.value = ""
                                                     if (submitPOWData != "") {
@@ -1144,7 +1144,7 @@ class TracerouteHandler {
                         maxTriesDNS -= 1
                     }
                     isDNSInProgress.value = false
-                    if (multipleIps.size == 0) {
+                    if (multipleIps.isEmpty()) {
 
                         insertErrorText.value =
                             "No DNS response yet! Check hostname and DNS setting!"
@@ -1259,7 +1259,7 @@ class TracerouteHandler {
                         }
                         //ggbang
                         //testAPIText.value=traceMapThreadsMapList.size.toString()
-                        if (traceMapThreadsMapList.size == 0) {
+                        if (traceMapThreadsMapList.isEmpty()) {
                             threadMutex.withLock {
                                 tracerouteThreadsIntList.indices.forEach { index ->
                                     if (tracerouteThreadsIntList[index] == uniqueID) {
@@ -1319,7 +1319,7 @@ class TracerouteHandler {
                             }
                             val submitBuilder = submitTraceMapRequest.build()
                             val submitTraceMapCall = client.newCall(submitBuilder).execute()
-                            val receiveTraceMapData = submitTraceMapCall.body?.string() ?: ""
+                            val receiveTraceMapData = submitTraceMapCall.body.string()
                             //testAPIText.value= submitTraceMapCall.code.toString()
                             if (submitTraceMapCall.isSuccessful) {
                                 if (receiveTraceMapData != "") {
@@ -1414,34 +1414,33 @@ class TracerouteHandler {
                             val dohRequestA = dohClientA.newCall(submitDOHRequestA).execute()
                             //testAPIText.value=dohResponseA.code.toString()
                             if (dohRequestA.isSuccessful) {
-                                val dohResponseBodyA = dohRequestA.body?.bytes()
-                                if (dohResponseBodyA != null) {
-                                    val dohResponseA = org.xbill.DNS.Message(dohResponseBodyA)
-                                        .getSection(org.xbill.DNS.Section.ANSWER)
-                                    for (r in dohResponseA) {
-                                        if (r is ARecord) {
-                                            val aRecordOne = r.address.hostAddress
-                                            if (aRecordOne != null) {
-                                                isADOHRequestSuccessful = true
-                                                if (multipleIpStateMode) {
-                                                    if (multipleIpsState.none { it.value == aRecordOne }) {
-                                                        multipleIpsState.add(
-                                                            mutableStateOf(
-                                                                aRecordOne
-                                                            )
+                                val dohResponseBodyA = dohRequestA.body.bytes()
+                                val dohResponseA = org.xbill.DNS.Message(dohResponseBodyA)
+                                    .getSection(org.xbill.DNS.Section.ANSWER)
+                                for (r in dohResponseA) {
+                                    if (r is ARecord) {
+                                        val aRecordOne = r.address.hostAddress
+                                        if (aRecordOne != null) {
+                                            isADOHRequestSuccessful = true
+                                            if (multipleIpStateMode) {
+                                                if (multipleIpsState.none { it.value == aRecordOne }) {
+                                                    multipleIpsState.add(
+                                                        mutableStateOf(
+                                                            aRecordOne
                                                         )
-                                                    }
-                                                } else {
-                                                    if (multipleIps.none { it == aRecordOne }) {
-                                                        multipleIps.add(aRecordOne)
-                                                    }
+                                                    )
                                                 }
-
+                                            } else {
+                                                if (multipleIps.none { it == aRecordOne }) {
+                                                    multipleIps.add(aRecordOne)
+                                                }
                                             }
+
                                         }
                                     }
-                                    dohRequestA.close()
                                 }
+                                dohRequestA.close()
+
 
                             }
 
@@ -1560,34 +1559,33 @@ class TracerouteHandler {
                                 dohClientAAAA.newCall(submitDOHRequestAAAA).execute()
                             //testAPIText.value=dohResponseAAAA.code.toString()
                             if (dohRequestAAAA.isSuccessful) {
-                                val dohResponseBodyAAAA = dohRequestAAAA.body?.bytes()
-                                if (dohResponseBodyAAAA != null) {
-                                    val dohResponseAAAA = org.xbill.DNS.Message(dohResponseBodyAAAA)
-                                        .getSection(org.xbill.DNS.Section.ANSWER)
-                                    for (r in dohResponseAAAA) {
-                                        if (r is AAAARecord) {
-                                            val aaaaRecordOne = r.address.hostAddress
-                                            if (aaaaRecordOne != null) {
-                                                isDOHRequestAAAASuccessful = true
-                                                if (multipleIpStateMode) {
-                                                    if (multipleIpsState.none { it.value == aaaaRecordOne }) {
-                                                        multipleIpsState.add(
-                                                            mutableStateOf(
-                                                                aaaaRecordOne
-                                                            )
+                                val dohResponseBodyAAAA = dohRequestAAAA.body.bytes()
+                                val dohResponseAAAA = org.xbill.DNS.Message(dohResponseBodyAAAA)
+                                    .getSection(org.xbill.DNS.Section.ANSWER)
+                                for (r in dohResponseAAAA) {
+                                    if (r is AAAARecord) {
+                                        val aaaaRecordOne = r.address.hostAddress
+                                        if (aaaaRecordOne != null) {
+                                            isDOHRequestAAAASuccessful = true
+                                            if (multipleIpStateMode) {
+                                                if (multipleIpsState.none { it.value == aaaaRecordOne }) {
+                                                    multipleIpsState.add(
+                                                        mutableStateOf(
+                                                            aaaaRecordOne
                                                         )
-                                                    }
-                                                } else {
-                                                    if (multipleIps.none { it == aaaaRecordOne }) {
-                                                        multipleIps.add(aaaaRecordOne)
-                                                    }
+                                                    )
                                                 }
-
+                                            } else {
+                                                if (multipleIps.none { it == aaaaRecordOne }) {
+                                                    multipleIps.add(aaaaRecordOne)
+                                                }
                                             }
+
                                         }
                                     }
-                                    dohRequestAAAA.close()
                                 }
+                                dohRequestAAAA.close()
+
 
                             }
 
@@ -1710,173 +1708,170 @@ class TracerouteHandler {
                                 dohClientCNAME.newCall(submitDOHRequestCNAME).execute()
                             //testAPIText.value=dohResponseCNAME.code.toString()
                             if (dohRequestCNAME.isSuccessful) {
-                                val dohResponseBodyCNAME = dohRequestCNAME.body?.bytes()
-                                if (dohResponseBodyCNAME != null) {
-                                    val dohResponseCNAME =
-                                        org.xbill.DNS.Message(dohResponseBodyCNAME)
-                                            .getSection(org.xbill.DNS.Section.ANSWER)
-                                    for (r in dohResponseCNAME) {
-                                        if (r is CNAMERecord) {
-                                            val cnameRecordOne = r.target
-                                            if (cnameRecordOne != null) {
-                                                try {
-                                                    val dohNameCNAMEA =
-                                                        org.xbill.DNS.Name.fromString("$cnameRecordOne")
-                                                    val dohRecordCNAMEA =
-                                                        org.xbill.DNS.Record.newRecord(
-                                                            dohNameCNAMEA,
-                                                            Type.A,
-                                                            DClass.IN
+                                val dohResponseBodyCNAME = dohRequestCNAME.body.bytes()
+                                val dohResponseCNAME =
+                                    org.xbill.DNS.Message(dohResponseBodyCNAME)
+                                        .getSection(org.xbill.DNS.Section.ANSWER)
+                                for (r in dohResponseCNAME) {
+                                    if (r is CNAMERecord) {
+                                        val cnameRecordOne = r.target
+                                        if (cnameRecordOne != null) {
+                                            try {
+                                                val dohNameCNAMEA =
+                                                    org.xbill.DNS.Name.fromString("$cnameRecordOne")
+                                                val dohRecordCNAMEA =
+                                                    org.xbill.DNS.Record.newRecord(
+                                                        dohNameCNAMEA,
+                                                        Type.A,
+                                                        DClass.IN
+                                                    )
+                                                val dohMessageCNAMEA =
+                                                    org.xbill.DNS.Message.newQuery(
+                                                        dohRecordCNAMEA
+                                                    )
+                                                val dohBase64DataCNAMEA = Base64.encodeToString(
+                                                    dohMessageCNAMEA.toWire(),
+                                                    Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
+                                                )
+                                                val dohClientCNAMEA =
+                                                    OkHttpClient.Builder().build()
+                                                val submitDOHRequestCNAMEA = Request.Builder()
+                                                    .url(currentDOHServer.value + "?dns=" + dohBase64DataCNAMEA)
+                                                    .addHeader(
+                                                        "Accept",
+                                                        "application/dns-message"
+                                                    )
+                                                    .get()
+                                                    .build()
+                                                val dohRequestCNAMEA = dohClientCNAMEA.newCall(
+                                                    submitDOHRequestCNAMEA
+                                                ).execute()
+                                                if (dohRequestCNAMEA.isSuccessful) {
+                                                    val dohResponseBodyCNAMEA =
+                                                        dohRequestCNAMEA.body.bytes()
+                                                    val dohResponseCNAMEA =
+                                                        org.xbill.DNS.Message(
+                                                            dohResponseBodyCNAMEA
                                                         )
-                                                    val dohMessageCNAMEA =
-                                                        org.xbill.DNS.Message.newQuery(
-                                                            dohRecordCNAMEA
-                                                        )
-                                                    val dohBase64DataCNAMEA = Base64.encodeToString(
-                                                        dohMessageCNAMEA.toWire(),
+                                                            .getSection(org.xbill.DNS.Section.ANSWER)
+                                                    for (s in dohResponseCNAMEA) {
+                                                        if (s is ARecord) {
+                                                            val dohCNAMEAOne =
+                                                                s.address.hostAddress
+                                                            if (dohCNAMEAOne != null) {
+                                                                isCNAMEDOHRequestSuccessful =
+                                                                    true
+                                                                if (multipleIpStateMode) {
+                                                                    if (multipleIpsState.none { it.value == dohCNAMEAOne }) {
+                                                                        multipleIpsState.add(
+                                                                            mutableStateOf(
+                                                                                dohCNAMEAOne
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                } else {
+                                                                    if (multipleIps.none { it == dohCNAMEAOne }) {
+                                                                        multipleIps.add(
+                                                                            dohCNAMEAOne
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+
+                                                        }
+                                                    }
+                                                    dohRequestCNAMEA.close()
+
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e(
+                                                    "ResolveHandlerDOHCNAMEA",
+                                                    "", e
+                                                )
+                                            }
+                                            try {
+                                                val dohNameCNAMEAAAA =
+                                                    org.xbill.DNS.Name.fromString("$cnameRecordOne")
+                                                val dohRecordCNAMEAAAA =
+                                                    org.xbill.DNS.Record.newRecord(
+                                                        dohNameCNAMEAAAA,
+                                                        Type.AAAA,
+                                                        DClass.IN
+                                                    )
+                                                val dohMessageCNAMEAAAA =
+                                                    org.xbill.DNS.Message.newQuery(
+                                                        dohRecordCNAMEAAAA
+                                                    )
+                                                val dohBase64DataCNAMEAAAA =
+                                                    Base64.encodeToString(
+                                                        dohMessageCNAMEAAAA.toWire(),
                                                         Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
                                                     )
-                                                    val dohClientCNAMEA =
-                                                        OkHttpClient.Builder().build()
-                                                    val submitDOHRequestCNAMEA = Request.Builder()
-                                                        .url(currentDOHServer.value + "?dns=" + dohBase64DataCNAMEA)
+                                                val dohClientCNAMEAAAA =
+                                                    OkHttpClient.Builder().build()
+                                                val submitDOHRequestCNAMEAAAA =
+                                                    Request.Builder()
+                                                        .url(currentDOHServer.value + "?dns=" + dohBase64DataCNAMEAAAA)
                                                         .addHeader(
                                                             "Accept",
                                                             "application/dns-message"
                                                         )
                                                         .get()
                                                         .build()
-                                                    val dohRequestCNAMEA = dohClientCNAMEA.newCall(
-                                                        submitDOHRequestCNAMEA
+                                                val dohRequestCNAMEAAAA =
+                                                    dohClientCNAMEAAAA.newCall(
+                                                        submitDOHRequestCNAMEAAAA
                                                     ).execute()
-                                                    if (dohRequestCNAMEA.isSuccessful) {
-                                                        val dohResponseBodyCNAMEA =
-                                                            dohRequestCNAMEA.body?.bytes()
-                                                        if (dohResponseBodyCNAMEA != null) {
-                                                            val dohResponseCNAMEA =
-                                                                org.xbill.DNS.Message(
-                                                                    dohResponseBodyCNAMEA
-                                                                )
-                                                                    .getSection(org.xbill.DNS.Section.ANSWER)
-                                                            for (s in dohResponseCNAMEA) {
-                                                                if (s is ARecord) {
-                                                                    val dohCNAMEAOne =
-                                                                        s.address.hostAddress
-                                                                    if (dohCNAMEAOne != null) {
-                                                                        isCNAMEDOHRequestSuccessful =
-                                                                            true
-                                                                        if (multipleIpStateMode) {
-                                                                            if (multipleIpsState.none { it.value == dohCNAMEAOne }) {
-                                                                                multipleIpsState.add(
-                                                                                    mutableStateOf(
-                                                                                        dohCNAMEAOne
-                                                                                    )
-                                                                                )
-                                                                            }
-                                                                        } else {
-                                                                            if (multipleIps.none { it == dohCNAMEAOne }) {
-                                                                                multipleIps.add(
-                                                                                    dohCNAMEAOne
-                                                                                )
-                                                                            }
-                                                                        }
+                                                if (dohRequestCNAMEAAAA.isSuccessful) {
+                                                    val dohResponseBodyCNAMEAAAA =
+                                                        dohRequestCNAMEAAAA.body.bytes()
+                                                    val dohResponseCNAMEAAAA =
+                                                        org.xbill.DNS.Message(
+                                                            dohResponseBodyCNAMEAAAA
+                                                        )
+                                                            .getSection(org.xbill.DNS.Section.ANSWER)
+                                                    for (t in dohResponseCNAMEAAAA) {
+                                                        if (t is AAAARecord) {
+                                                            val dohCNAMEAAAAOne =
+                                                                t.address.hostAddress
+                                                            if (dohCNAMEAAAAOne != null) {
+                                                                isCNAMEDOHRequestSuccessful =
+                                                                    true
+                                                                if (multipleIpStateMode) {
+                                                                    if (multipleIpsState.none { it.value == dohCNAMEAAAAOne }) {
+                                                                        multipleIpsState.add(
+                                                                            mutableStateOf(
+                                                                                dohCNAMEAAAAOne
+                                                                            )
+                                                                        )
                                                                     }
-
+                                                                } else {
+                                                                    if (multipleIps.none { it == dohCNAMEAAAAOne }) {
+                                                                        multipleIps.add(
+                                                                            dohCNAMEAAAAOne
+                                                                        )
+                                                                    }
                                                                 }
                                                             }
-                                                            dohRequestCNAMEA.close()
+
                                                         }
                                                     }
-                                                } catch (e: Exception) {
-                                                    Log.e(
-                                                        "ResolveHandlerDOHCNAMEA",
-                                                        "", e
-                                                    )
+                                                    dohRequestCNAMEAAAA.close()
+
                                                 }
-                                                try {
-                                                    val dohNameCNAMEAAAA =
-                                                        org.xbill.DNS.Name.fromString("$cnameRecordOne")
-                                                    val dohRecordCNAMEAAAA =
-                                                        org.xbill.DNS.Record.newRecord(
-                                                            dohNameCNAMEAAAA,
-                                                            Type.AAAA,
-                                                            DClass.IN
-                                                        )
-                                                    val dohMessageCNAMEAAAA =
-                                                        org.xbill.DNS.Message.newQuery(
-                                                            dohRecordCNAMEAAAA
-                                                        )
-                                                    val dohBase64DataCNAMEAAAA =
-                                                        Base64.encodeToString(
-                                                            dohMessageCNAMEAAAA.toWire(),
-                                                            Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
-                                                        )
-                                                    val dohClientCNAMEAAAA =
-                                                        OkHttpClient.Builder().build()
-                                                    val submitDOHRequestCNAMEAAAA =
-                                                        Request.Builder()
-                                                            .url(currentDOHServer.value + "?dns=" + dohBase64DataCNAMEAAAA)
-                                                            .addHeader(
-                                                                "Accept",
-                                                                "application/dns-message"
-                                                            )
-                                                            .get()
-                                                            .build()
-                                                    val dohRequestCNAMEAAAA =
-                                                        dohClientCNAMEAAAA.newCall(
-                                                            submitDOHRequestCNAMEAAAA
-                                                        ).execute()
-                                                    if (dohRequestCNAMEAAAA.isSuccessful) {
-                                                        val dohResponseBodyCNAMEAAAA =
-                                                            dohRequestCNAMEAAAA.body?.bytes()
-                                                        if (dohResponseBodyCNAMEAAAA != null) {
-                                                            val dohResponseCNAMEAAAA =
-                                                                org.xbill.DNS.Message(
-                                                                    dohResponseBodyCNAMEAAAA
-                                                                )
-                                                                    .getSection(org.xbill.DNS.Section.ANSWER)
-                                                            for (t in dohResponseCNAMEAAAA) {
-                                                                if (t is AAAARecord) {
-                                                                    val dohCNAMEAAAAOne =
-                                                                        t.address.hostAddress
-                                                                    if (dohCNAMEAAAAOne != null) {
-                                                                        isCNAMEDOHRequestSuccessful =
-                                                                            true
-                                                                        if (multipleIpStateMode) {
-                                                                            if (multipleIpsState.none { it.value == dohCNAMEAAAAOne }) {
-                                                                                multipleIpsState.add(
-                                                                                    mutableStateOf(
-                                                                                        dohCNAMEAAAAOne
-                                                                                    )
-                                                                                )
-                                                                            }
-                                                                        } else {
-                                                                            if (multipleIps.none { it == dohCNAMEAAAAOne }) {
-                                                                                multipleIps.add(
-                                                                                    dohCNAMEAAAAOne
-                                                                                )
-                                                                            }
-                                                                        }
-                                                                    }
-
-                                                                }
-                                                            }
-                                                            dohRequestCNAMEAAAA.close()
-                                                        }
-                                                    }
-                                                } catch (e: Exception) {
-                                                    Log.e(
-                                                        "RHandlerDOHCNAMEAAAA",
-                                                        "", e
-                                                    )
-                                                }
-
-
+                                            } catch (e: Exception) {
+                                                Log.e(
+                                                    "RHandlerDOHCNAMEAAAA",
+                                                    "", e
+                                                )
                                             }
+
+
                                         }
                                     }
-                                    dohRequestCNAME.close()
                                 }
+                                dohRequestCNAME.close()
+
 
                             }
 
@@ -2145,20 +2140,19 @@ class TracerouteHandler {
                                         val dohRequestPTR4 =
                                             dohClientPTR4.newCall(submitDOHRequestPTR4).execute()
                                         if (dohRequestPTR4.isSuccessful) {
-                                            val dohResponseBodyPTR4 = dohRequestPTR4.body?.bytes()
-                                            if (dohResponseBodyPTR4 != null) {
-                                                val dohResponsePTR4 =
-                                                    org.xbill.DNS.Message(dohResponseBodyPTR4)
-                                                        .getSection(org.xbill.DNS.Section.ANSWER)
-                                                for (r in dohResponsePTR4) {
-                                                    if (r is PTRRecord) {
-                                                        isPTR4DOHRequestSuccessful = true
-                                                        item[2][0].value = r.target.toString()
-                                                        noResult = false
-                                                    }
+                                            val dohResponseBodyPTR4 = dohRequestPTR4.body.bytes()
+                                            val dohResponsePTR4 =
+                                                org.xbill.DNS.Message(dohResponseBodyPTR4)
+                                                    .getSection(org.xbill.DNS.Section.ANSWER)
+                                            for (r in dohResponsePTR4) {
+                                                if (r is PTRRecord) {
+                                                    isPTR4DOHRequestSuccessful = true
+                                                    item[2][0].value = r.target.toString()
+                                                    noResult = false
                                                 }
-                                                dohRequestPTR4.close()
                                             }
+                                            dohRequestPTR4.close()
+
 
                                         }
 
@@ -2319,20 +2313,19 @@ class TracerouteHandler {
                                         val dohRequestPTR6 =
                                             dohClientPTR6.newCall(submitDOHRequestPTR6).execute()
                                         if (dohRequestPTR6.isSuccessful) {
-                                            val dohResponseBodyPTR6 = dohRequestPTR6.body?.bytes()
-                                            if (dohResponseBodyPTR6 != null) {
-                                                val dohResponsePTR6 =
-                                                    org.xbill.DNS.Message(dohResponseBodyPTR6)
-                                                        .getSection(org.xbill.DNS.Section.ANSWER)
-                                                for (r in dohResponsePTR6) {
-                                                    if (r is PTRRecord) {
-                                                        isPTR6DOHRequestSuccessful = true
-                                                        item[2][0].value = r.target.toString()
-                                                        noResult6 = false
-                                                    }
+                                            val dohResponseBodyPTR6 = dohRequestPTR6.body.bytes()
+                                            val dohResponsePTR6 =
+                                                org.xbill.DNS.Message(dohResponseBodyPTR6)
+                                                    .getSection(org.xbill.DNS.Section.ANSWER)
+                                            for (r in dohResponsePTR6) {
+                                                if (r is PTRRecord) {
+                                                    isPTR6DOHRequestSuccessful = true
+                                                    item[2][0].value = r.target.toString()
+                                                    noResult6 = false
                                                 }
-                                                dohRequestPTR6.close()
                                             }
+                                            dohRequestPTR6.close()
+
 
                                         }
 
@@ -2474,16 +2467,16 @@ class TracerouteHandler {
 
     fun identifyInput(input: String): String {
         val ipv4Pattern = Pattern.compile(
-            "^(?!255\\.255\\.255\\.255\$)([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}\$"
+            "^(?!255\\.255\\.255\\.255$)([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}$"
         )
         val ipv6Pattern1 = Pattern.compile(
-            "^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\$"
+            "^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$"
         )
         val ipv6Pattern2 = Pattern.compile(
-            "^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4})*)?)::((([0-9A-Fa-f]{1,4}:)*[0-9A-Fa-f]{1,4})?)\$"
+            "^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4})*)?)::((([0-9A-Fa-f]{1,4}:)*[0-9A-Fa-f]{1,4})?)$"
         )
         val hostnamePattern = Pattern.compile(
-            "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z][A-Za-z0-9]*)\$"
+            "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z][A-Za-z0-9]*)$"
 
         )
         if (ipv4Pattern.matcher(input).matches()) {
@@ -2507,6 +2500,7 @@ class TracerouteHandler {
         val address: IPAddress = try {
             IPAddressString(input).toAddress()
         } catch (e: AddressStringException) {
+            Log.e("reservedIPFilterHandler", "", e)
             return ""
         }
         val currentCIDRMap = if (identifyInput(input) == IPV4_IDENTIFIER) {
