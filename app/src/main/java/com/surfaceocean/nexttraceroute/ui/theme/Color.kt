@@ -1,7 +1,7 @@
 /*
 
 NextTraceroute, an Android traceroute app using Nexttrace API
-Copyright (C) 2024 surfaceocean
+Copyright (C) 2024-2025 surfaceocean
 Email: r2qb8uc5@protonmail.com
 GitHub: https://github.com/nxtrace/NextTraceroute
 This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ The "square/okhttp" library is licensed under the Apache 2.0 License.
 The "gson" library is licensed under the Apache 2.0 License.
 The "slf4j-android" library is licensed under the MIT License.
 The "androidx" library is licensed under the Apache 2.0 License.
+The "Compose Color Picker" library is licensed under the MIT License.
 
 */
 package com.surfaceocean.nexttraceroute.ui.theme
@@ -36,10 +37,10 @@ package com.surfaceocean.nexttraceroute.ui.theme
 import androidx.compose.ui.graphics.Color
 
 
-val DefaultBackgroundColor= Color.Black
-val DefaultBackgroundColorReverse= Color.White
-val ButtonEnabledColor = Color(0xFF00F6FF)
-val ButtonDisabledColor = Color.Gray
+//val DefaultBackgroundColor= Color.Black
+//val DefaultBackgroundColorReverse= Color.White
+//val ButtonEnabledColor = Color(0xFF00F6FF)
+//val ButtonDisabledColor = Color.Gray
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)

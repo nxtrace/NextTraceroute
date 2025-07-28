@@ -1,7 +1,7 @@
 /*
 
 NextTraceroute, an Android traceroute app using Nexttrace API
-Copyright (C) 2024 surfaceocean
+Copyright (C) 2024-2025 surfaceocean
 Email: r2qb8uc5@protonmail.com
 GitHub: https://github.com/nxtrace/NextTraceroute
 This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ The "square/okhttp" library is licensed under the Apache 2.0 License.
 The "gson" library is licensed under the Apache 2.0 License.
 The "slf4j-android" library is licensed under the MIT License.
 The "androidx" library is licensed under the Apache 2.0 License.
+The "Compose Color Picker" library is licensed under the MIT License.
 
 */
 
@@ -121,10 +122,6 @@ import androidx.room.Room
 import androidx.room.withTransaction
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.surfaceocean.nexttraceroute.ui.theme.ButtonDisabledColor
-import com.surfaceocean.nexttraceroute.ui.theme.ButtonEnabledColor
-import com.surfaceocean.nexttraceroute.ui.theme.DefaultBackgroundColor
-import com.surfaceocean.nexttraceroute.ui.theme.DefaultBackgroundColorReverse
 import com.surfaceocean.nexttraceroute.ui.theme.NextTracerouteTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -139,13 +136,24 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             NextTracerouteTheme {
+                val borderColor = remember { mutableStateOf(Color.DarkGray) }
+                val disabledContentColor = remember { mutableStateOf(Color.DarkGray) }
+                val backgroundColor = remember { mutableStateOf(Color.Black) }
+                val genericTextColor = remember { mutableStateOf(Color.White) }
+                val navigationIconColor = remember { mutableStateOf(Color.White) }
+                val buttonEnabledColor = remember { mutableStateOf(Color(0xFF00F6FF)) }
+                val buttonDisabledColor = remember { mutableStateOf(Color.Gray) }
+                val buttonTextColor = remember { mutableStateOf(Color.Black) }
+                val resultSNColor = remember { mutableStateOf(Color.Yellow) }
+                val resultASColor = remember { mutableStateOf(Color.Green) }
+                val resultPingColor = remember { mutableStateOf(Color(0xFF00FFFF)) }
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
                         .systemBarsPadding(),
                     //color = MaterialTheme.colorScheme.background,
-                    color = DefaultBackgroundColor
+                    color = backgroundColor.value
                 ) {
                     org.xbill.DNS.config.AndroidResolverConfigProvider.setContext(this)
                     val isSearchBarEnabled = remember { mutableStateOf(true) }
@@ -203,7 +211,28 @@ class MainActivity : ComponentActivity() {
                                     apiDNSNamePOW.value = settingsMap["apiDNSNamePOW"] as String
                                     apiHostName.value = settingsMap["apiHostName"] as String
                                     apiDNSName.value = settingsMap["apiDNSName"] as String
-
+                                    borderColor.value =
+                                        Color((settingsMap["borderColor"] as Double).toInt())
+                                    disabledContentColor.value =
+                                        Color((settingsMap["disabledContentColor"] as Double).toInt())
+                                    backgroundColor.value =
+                                        Color((settingsMap["backgroundColor"] as Double).toInt())
+                                    genericTextColor.value =
+                                        Color((settingsMap["genericTextColor"] as Double).toInt())
+                                    navigationIconColor.value =
+                                        Color((settingsMap["navigationIconColor"] as Double).toInt())
+                                    buttonEnabledColor.value =
+                                        Color((settingsMap["buttonEnabledColor"] as Double).toInt())
+                                    buttonDisabledColor.value =
+                                        Color((settingsMap["buttonDisabledColor"] as Double).toInt())
+                                    buttonTextColor.value =
+                                        Color((settingsMap["buttonTextColor"] as Double).toInt())
+                                    resultSNColor.value =
+                                        Color((settingsMap["resultSNColor"] as Double).toInt())
+                                    resultASColor.value =
+                                        Color((settingsMap["resultASColor"] as Double).toInt())
+                                    resultPingColor.value =
+                                        Color((settingsMap["resultPingColor"] as Double).toInt())
                                 }
 
                             }
@@ -258,7 +287,18 @@ class MainActivity : ComponentActivity() {
                                     apiHostName = apiHostName,
                                     apiDNSName = apiDNSName,
                                     currentDOHServer = currentDOHServer,
-                                    currentDNSMode = currentDNSMode
+                                    currentDNSMode = currentDNSMode,
+                                    borderColor = borderColor,
+                                    disabledContentColor = disabledContentColor,
+                                    backgroundColor = backgroundColor,
+                                    genericTextColor = genericTextColor,
+                                    navigationIconColor = navigationIconColor,
+                                    buttonEnabledColor = buttonEnabledColor,
+                                    buttonDisabledColor = buttonDisabledColor,
+                                    buttonTextColor = buttonTextColor,
+                                    resultSNColor = resultSNColor,
+                                    resultASColor = resultASColor,
+                                    resultPingColor = resultPingColor
                                 )
                             }
 
@@ -267,7 +307,18 @@ class MainActivity : ComponentActivity() {
                                     context = context,
                                     currentPage = currentPage,
                                     historyDao = historyDao,
-                                    db = db
+                                    db = db,
+                                    borderColor = borderColor,
+                                    disabledContentColor = disabledContentColor,
+                                    backgroundColor = backgroundColor,
+                                    genericTextColor = genericTextColor,
+                                    navigationIconColor = navigationIconColor,
+                                    buttonEnabledColor = buttonEnabledColor,
+                                    buttonDisabledColor = buttonDisabledColor,
+                                    buttonTextColor = buttonTextColor,
+                                    resultSNColor = resultSNColor,
+                                    resultASColor = resultASColor,
+                                    resultPingColor = resultPingColor
                                 )
                             }
 
@@ -275,7 +326,12 @@ class MainActivity : ComponentActivity() {
                                 MyTopAppBar(
                                     currentPage = currentPage,
                                     isSearchBarEnabled = isSearchBarEnabled,
-                                    context = context
+                                    context = context,
+                                    borderColor = borderColor,
+                                    disabledContentColor = disabledContentColor,
+                                    backgroundColor = backgroundColor,
+                                    genericTextColor = genericTextColor,
+                                    navigationIconColor = navigationIconColor
                                 )
                                 MainColumn(
                                     isSearchBarEnabled = isSearchBarEnabled,
@@ -295,14 +351,29 @@ class MainActivity : ComponentActivity() {
                                     listState = listState,
                                     isScrollToFirstLineTriggered = isScrollToFirstLineTriggered,
                                     historyDao = historyDao,
-                                    db = db
+                                    db = db,
+                                    borderColor = borderColor,
+                                    disabledContentColor = disabledContentColor,
+                                    backgroundColor = backgroundColor,
+                                    genericTextColor = genericTextColor,
+                                    buttonEnabledColor = buttonEnabledColor,
+                                    buttonDisabledColor = buttonDisabledColor,
+                                    buttonTextColor = buttonTextColor,
+                                    resultSNColor = resultSNColor,
+                                    resultASColor = resultASColor,
+                                    resultPingColor = resultPingColor
                                 )
 
 
                             }
 
                             "about" -> {
-                                AboutPage(currentPage = currentPage)
+                                AboutPage(
+                                    currentPage = currentPage,
+                                    borderColor = borderColor,
+                                    genericTextColor = genericTextColor,
+                                    navigationIconColor = navigationIconColor
+                                )
                             }
                         }
 
@@ -316,7 +387,13 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun AboutPage(currentPage: MutableState<String>) {
+fun AboutPage(
+    currentPage: MutableState<String>,
+    borderColor: MutableState<Color>,
+    genericTextColor: MutableState<Color>,
+    navigationIconColor: MutableState<Color>
+
+) {
     BackHandler {
         currentPage.value = "main"
     }
@@ -327,20 +404,20 @@ fun AboutPage(currentPage: MutableState<String>) {
             .fillMaxWidth()
             .statusBarsPadding()
             .systemBarsPadding()
-            .border(1.dp, Color.DarkGray)
+            .border(1.dp, borderColor.value)
             .padding(bottom = 1.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { currentPage.value = "main" }) {
-            Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.White)
+            Icon(Icons.Filled.Home, contentDescription = "Home", tint = navigationIconColor.value)
         }
     }
     Spacer(modifier = Modifier.height(8.dp))
 
     Column(modifier = Modifier.verticalScroll(scrollState)) {
         Text(
-            color = DefaultBackgroundColorReverse,
+            color = genericTextColor.value,
             text = "NextTraceroute version " +
                     BuildConfig.VERSION_NAME + ", an Android traceroute app using Nexttrace API\n" +
                     "Copyright (C) 2024 surfaceocean\n" +
@@ -381,16 +458,21 @@ fun MyTopAppBar(
     modifier: Modifier = Modifier,
     currentPage: MutableState<String>,
     isSearchBarEnabled: MutableState<Boolean>,
-    context: Context
+    context: Context,
+    borderColor: MutableState<Color>,
+    disabledContentColor: MutableState<Color>,
+    backgroundColor: MutableState<Color>,
+    genericTextColor: MutableState<Color>,
+    navigationIconColor: MutableState<Color>
 ) {
     var showMenu by remember { mutableStateOf(false) }
     TopAppBar(
         colors = TopAppBarColors(
-            containerColor = Color.Black,
-            scrolledContainerColor = DefaultBackgroundColorReverse,
-            navigationIconContentColor = DefaultBackgroundColorReverse,
-            titleContentColor = DefaultBackgroundColorReverse,
-            actionIconContentColor = DefaultBackgroundColorReverse
+            containerColor = backgroundColor.value,
+            scrolledContainerColor = genericTextColor.value,
+            navigationIconContentColor = genericTextColor.value,
+            titleContentColor = genericTextColor.value,
+            actionIconContentColor = genericTextColor.value
         ),
         title = {
             Text(
@@ -402,25 +484,30 @@ fun MyTopAppBar(
             )
         },
         modifier = modifier
-            .border(1.dp, Color.DarkGray)
+            .border(1.dp, borderColor.value)
             .padding(bottom = 1.dp)
             .statusBarsPadding()
             .systemBarsPadding(),
         actions = {
             IconButton(onClick = { showMenu = !showMenu }
             ) {
-                Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = Color.White)
+                Icon(
+                    Icons.Filled.MoreVert,
+                    contentDescription = "More",
+                    tint = navigationIconColor.value
+                )
             }
             DropdownMenu(
                 expanded = showMenu,
-                onDismissRequest = { showMenu = false }
+                onDismissRequest = { showMenu = false },
+                modifier = Modifier.background(backgroundColor.value),
             ) {
                 DropdownMenuItem(
-                    modifier = Modifier.background(DefaultBackgroundColor),
+                    modifier = Modifier.background(backgroundColor.value),
                     text = {
                         Text(
                             "Settings",
-                            color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray
+                            color = if (isSearchBarEnabled.value) genericTextColor.value else disabledContentColor.value
                         )
                     },
                     onClick = {
@@ -430,11 +517,11 @@ fun MyTopAppBar(
                     enabled = isSearchBarEnabled.value
                 )
                 DropdownMenuItem(
-                    modifier = Modifier.background(DefaultBackgroundColor),
+                    modifier = Modifier.background(backgroundColor.value),
                     text = {
                         Text(
                             "History",
-                            color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray
+                            color = if (isSearchBarEnabled.value) genericTextColor.value else disabledContentColor.value
                         )
                     },
                     onClick = {
@@ -444,11 +531,11 @@ fun MyTopAppBar(
                     enabled = isSearchBarEnabled.value
                 )
                 DropdownMenuItem(
-                    modifier = Modifier.background(DefaultBackgroundColor),
+                    modifier = Modifier.background(backgroundColor.value),
                     text = {
                         Text(
                             "About",
-                            color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray
+                            color = if (isSearchBarEnabled.value) genericTextColor.value else disabledContentColor.value
                         )
                     },
                     onClick = {
@@ -458,11 +545,11 @@ fun MyTopAppBar(
                     enabled = isSearchBarEnabled.value
                 )
                 DropdownMenuItem(
-                    modifier = Modifier.background(DefaultBackgroundColor),
+                    modifier = Modifier.background(backgroundColor.value),
                     text = {
                         Text(
                             "Privacy Policy",
-                            color = if (isSearchBarEnabled.value) DefaultBackgroundColorReverse else Color.Gray
+                            color = if (isSearchBarEnabled.value) genericTextColor.value else disabledContentColor.value
                         )
                     },
                     onClick = {
@@ -590,7 +677,17 @@ fun MainColumn(
     currentDOHServer: MutableState<String>,
     currentDNSMode: MutableState<String>, listState: LazyListState,
     isScrollToFirstLineTriggered: MutableState<Boolean>,
-    historyDao: HistoryDao, db: AppDatabase
+    historyDao: HistoryDao, db: AppDatabase,
+    borderColor: MutableState<Color>,
+    disabledContentColor: MutableState<Color>,
+    backgroundColor: MutableState<Color>,
+    genericTextColor: MutableState<Color>,
+    buttonEnabledColor: MutableState<Color>,
+    buttonDisabledColor: MutableState<Color>,
+    buttonTextColor: MutableState<Color>,
+    resultSNColor: MutableState<Color>,
+    resultASColor: MutableState<Color>,
+    resultPingColor: MutableState<Color>
 ) {
 
     val threadMutex = Mutex()
@@ -752,7 +849,11 @@ fun MainColumn(
                 onSearchResults = searchText,
                 modifier = Modifier.weight(1f),
                 isButtonClicked = isButtonClicked,
-                isSearchBarEnabled = isSearchBarEnabled
+                isSearchBarEnabled = isSearchBarEnabled,
+                borderColor = borderColor,
+                backgroundColor = backgroundColor,
+                genericTextColor = genericTextColor,
+                buttonEnabledColor = buttonEnabledColor
             )
             val searchDatabaseResultList = remember { mutableStateListOf<String>() }
             val scope = rememberCoroutineScope()
@@ -779,6 +880,7 @@ fun MainColumn(
                 }
             }
             DropdownMenu(
+                modifier = Modifier.background(backgroundColor.value),
                 expanded = isSearchBarEnabled.value && searchDatabaseResultList.isNotEmpty(),
                 properties = PopupProperties(
                     focusable = false,
@@ -800,10 +902,10 @@ fun MainColumn(
                 enabled = isSearchBarEnabled.value,
                 onClick = { isButtonClicked.value = true },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isSearchBarEnabled.value) ButtonEnabledColor else ButtonDisabledColor,
-                    contentColor = DefaultBackgroundColor,
-                    disabledContainerColor = Color.Gray,
-                    disabledContentColor = Color.DarkGray
+                    containerColor = if (isSearchBarEnabled.value) buttonEnabledColor.value else buttonDisabledColor.value,
+                    contentColor = buttonTextColor.value,
+                    disabledContainerColor = buttonDisabledColor.value,
+                    disabledContentColor = disabledContentColor.value
                 )
 
             ) {
@@ -814,7 +916,7 @@ fun MainColumn(
         if (!isSearchBarEnabled.value && tracerouteThreadsIntList.any { it != 0 }) {
             Spacer(modifier = Modifier.height(20.dp))
             CircularProgressIndicator(
-                color = DefaultBackgroundColorReverse,
+                color = genericTextColor.value,
                 strokeWidth = 4.dp,
                 modifier = Modifier.size(50.dp)
             )
@@ -822,10 +924,10 @@ fun MainColumn(
         }
 
         if (insertErrorText.value != "") {
-            Text(text = insertErrorText.value, color = DefaultBackgroundColorReverse)
+            Text(text = insertErrorText.value, color = genericTextColor.value)
         }
         if (testText.value != "") {
-            Text(text = testText.value, color = DefaultBackgroundColorReverse)
+            Text(text = testText.value, color = genericTextColor.value)
 //            clipboardManager.setPrimaryClip(ClipData.newPlainText("simple text",testText.value))
         }
         if (nativePingCheckErrorText.value != "") {
@@ -847,10 +949,10 @@ fun MainColumn(
                         )
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = ButtonEnabledColor,
-                        contentColor = DefaultBackgroundColor,
-                        disabledContainerColor = Color.Gray,
-                        disabledContentColor = Color.DarkGray
+                        containerColor = buttonEnabledColor.value,
+                        contentColor = buttonTextColor.value,
+                        disabledContainerColor = buttonDisabledColor.value,
+                        disabledContentColor = disabledContentColor.value
                     )
                 ) {
                     Text("Map")
@@ -881,10 +983,10 @@ fun MainColumn(
 
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = ButtonEnabledColor,
-                        contentColor = DefaultBackgroundColor,
-                        disabledContainerColor = Color.Gray,
-                        disabledContentColor = Color.DarkGray
+                        containerColor = buttonEnabledColor.value,
+                        contentColor = buttonTextColor.value,
+                        disabledContainerColor = buttonDisabledColor.value,
+                        disabledContentColor = disabledContentColor.value
                     )
                 ) {
                     Text("Copy Result")
@@ -894,7 +996,7 @@ fun MainColumn(
         //test text
 
 //        val testtest: MutableList<Int> = tracerouteThreadsIntList.toMutableStateList()
-//        Text(text = testtest.toList().toString(), color = DefaultBackgroundColorReverse)
+//        Text(text = testtest.toList().toString(), color = genericTextColor.value)
         //test button
 //        Button(onClick = {
 //            gridDataList[0][0][0].value = "1"
@@ -913,7 +1015,7 @@ fun MainColumn(
         if (multipleIps.isNotEmpty() && tracerouteThreadsIntList.none { it != 0 }) {
             LazyColumn(
                 modifier = Modifier
-                    .border(1.dp, Color.DarkGray)
+                    .border(1.dp, borderColor.value)
                     .fillMaxWidth()
             ) {
                 itemsIndexed(
@@ -929,10 +1031,10 @@ fun MainColumn(
 
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = ButtonEnabledColor,
-                                contentColor = DefaultBackgroundColor,
-                                disabledContainerColor = Color.Gray,
-                                disabledContentColor = Color.DarkGray
+                                containerColor = buttonEnabledColor.value,
+                                contentColor = buttonTextColor.value,
+                                disabledContainerColor = buttonDisabledColor.value,
+                                disabledContentColor = disabledContentColor.value
                             )
                         ) {
                             Text(multipleIPItem.value)
@@ -945,7 +1047,7 @@ fun MainColumn(
         LazyColumn(
             state = listState,
             modifier = Modifier
-                .border(1.dp, Color.DarkGray)
+                .border(1.dp, borderColor.value)
             //.padding(bottom = 1.dp)
         ) {
             itemsIndexed(items = gridDataList) { _, gridDataListItem ->
@@ -966,22 +1068,23 @@ fun MainColumn(
 //                            var uGridIndex = remember { mutableIntStateOf(
 //                                gridDataListItemIndex*100+gridDataIndex*10+colIndex) }
                             val colorForSpecialUse = remember {
-                                mutableStateOf(Color.White)
+                                mutableStateOf(genericTextColor.value)
                             }
+                            colorForSpecialUse.value = genericTextColor.value
                             if (gridDataIndex == 0 && colIndex == 0) {
-                                colorForSpecialUse.value = Color.Yellow
+                                colorForSpecialUse.value = resultSNColor.value
                             }
                             if (gridDataIndex == 0 && (colIndex == 2 || colIndex == 3)) {
-                                colorForSpecialUse.value = Color.Green
+                                colorForSpecialUse.value = resultASColor.value
                             }
                             if (gridDataIndex == 2 && (colIndex == 1)) {
-                                colorForSpecialUse.value = Color(0xFF00FFFF)
+                                colorForSpecialUse.value = resultPingColor.value
                             }
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
                                     .padding(8.dp)
-                                    //.border(1.dp, Color.White, RoundedCornerShape(4.dp))
+                                    //.border(1.dp, genericTextColor.value, RoundedCornerShape(4.dp))
                                     .pointerInput(item) {
                                         detectTapGestures(
                                             onLongPress = {
@@ -1027,7 +1130,7 @@ fun MainColumn(
                         HorizontalDivider(
                             modifier = Modifier,
                             thickness = 1.dp,
-                            color = Color.DarkGray
+                            color = borderColor.value
                         )
                     }
 
@@ -1049,7 +1152,11 @@ fun SearchBar(
     modifier: Modifier = Modifier,
     onSearchResults: MutableState<String>,
     isSearchBarEnabled: MutableState<Boolean>,
-    isButtonClicked: MutableState<Boolean>
+    isButtonClicked: MutableState<Boolean>,
+    borderColor: MutableState<Color>,
+    backgroundColor: MutableState<Color>,
+    genericTextColor: MutableState<Color>,
+    buttonEnabledColor: MutableState<Color>
 ) {
     // var searchText by remember { mutableStateOf("") }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -1066,7 +1173,7 @@ fun SearchBar(
             }
         ),
         singleLine = true,
-        textStyle = TextStyle(color = DefaultBackgroundColorReverse),
+        textStyle = TextStyle(color = genericTextColor.value),
         value = onSearchResults.value,
         //search bar can only clicked again if everything is done
         onValueChange = {
@@ -1086,14 +1193,15 @@ fun SearchBar(
             )
         },
         colors = TextFieldDefaults.colors(
-            unfocusedContainerColor = DefaultBackgroundColor,
-            focusedContainerColor = DefaultBackgroundColor,
-            focusedTextColor = DefaultBackgroundColorReverse,
-            unfocusedTextColor = DefaultBackgroundColorReverse,
-            unfocusedIndicatorColor = Color.DarkGray
+            unfocusedContainerColor = backgroundColor.value,
+            focusedContainerColor = backgroundColor.value,
+            focusedTextColor = genericTextColor.value,
+            unfocusedTextColor = genericTextColor.value,
+            unfocusedIndicatorColor = borderColor.value,
+            focusedIndicatorColor = buttonEnabledColor.value
         ),
         placeholder = {
-            Text("Insert Host, IPv4 or IPv6", color = DefaultBackgroundColorReverse)
+            Text("Insert Host, IPv4 or IPv6", color = genericTextColor.value)
         },
         modifier = modifier
             .fillMaxWidth()

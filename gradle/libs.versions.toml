@@ -16,7 +16,7 @@ gson = "2.13.1"
 slf4j-android= "1.7.36"
 room = "2.7.2"
 lifecycleLivedataKtx = "2.9.2"
-
+colorPicker = "0.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -37,6 +37,7 @@ dnsjava = { module = "dnsjava:dnsjava", version.ref = "dnsjava" }
 ipaddress = { module = "com.github.seancfoley:ipaddress", version.ref = "ipaddress" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+compose-color-picker-android = { module = "com.godaddy.android.colorpicker:compose-color-picker-android", version.ref = "colorPicker" }
 slf4j-android = { module = "org.slf4j:slf4j-android", version.ref = "slf4j-android" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx     = { module = "androidx.room:room-ktx",     version.ref = "room" }

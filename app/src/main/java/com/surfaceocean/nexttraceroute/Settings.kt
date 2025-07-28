@@ -1,7 +1,7 @@
 /*
 
 NextTraceroute, an Android traceroute app using Nexttrace API
-Copyright (C) 2024 surfaceocean
+Copyright (C) 2024-2025 surfaceocean
 Email: r2qb8uc5@protonmail.com
 GitHub: https://github.com/nxtrace/NextTraceroute
 This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ The "square/okhttp" library is licensed under the Apache 2.0 License.
 The "gson" library is licensed under the Apache 2.0 License.
 The "slf4j-android" library is licensed under the MIT License.
 The "androidx" library is licensed under the Apache 2.0 License.
+The "Compose Color Picker" library is licensed under the MIT License.
 
 */
 
@@ -39,6 +40,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,6 +59,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -82,13 +85,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.godaddy.android.colorpicker.ClassicColorPicker
+import com.godaddy.android.colorpicker.HsvColor
 import com.google.gson.Gson
-import com.surfaceocean.nexttraceroute.ui.theme.ButtonEnabledColor
-import com.surfaceocean.nexttraceroute.ui.theme.DefaultBackgroundColor
-import com.surfaceocean.nexttraceroute.ui.theme.DefaultBackgroundColorReverse
 import kotlin.math.roundToInt
 
 
@@ -102,8 +105,19 @@ fun SettingsColumn(
     tracerouteDNSServer: MutableState<String>, currentDOHServer: MutableState<String>,
     apiHostNamePOW: MutableState<String>, apiDNSNamePOW: MutableState<String>,
     apiHostName: MutableState<String>, apiDNSName: MutableState<String>,
+    borderColor: MutableState<Color>,
+    disabledContentColor: MutableState<Color>,
+    backgroundColor: MutableState<Color>,
+    genericTextColor: MutableState<Color>,
+    navigationIconColor: MutableState<Color>,
+    buttonEnabledColor: MutableState<Color>,
+    buttonDisabledColor: MutableState<Color>,
+    buttonTextColor: MutableState<Color>,
+    resultSNColor: MutableState<Color>,
+    resultASColor: MutableState<Color>,
+    resultPingColor: MutableState<Color>
 
-    ) {
+) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val trHandler = TracerouteHandler()
     val scrollState = rememberScrollState()
@@ -138,6 +152,36 @@ fun SettingsColumn(
     val powDNSNameText = remember { mutableStateOf("") }
     val apiHostNameText = remember { mutableStateOf("") }
     val apiDNSNameText = remember { mutableStateOf("") }
+    val borderColorValue = remember { mutableStateOf(Color.Blue) }
+    val disabledContentColorValue = remember { mutableStateOf(Color.Blue) }
+    val backgroundColorValue = remember { mutableStateOf(Color.Blue) }
+    val genericTextColorValue = remember { mutableStateOf(Color.Blue) }
+    val navigationIconColorValue = remember { mutableStateOf(Color.Blue) }
+    val buttonEnabledColorValue = remember { mutableStateOf(Color.Blue) }
+    val buttonDisabledColorValue = remember { mutableStateOf(Color.Blue) }
+    val buttonTextColorValue = remember { mutableStateOf(Color.Blue) }
+    val resultSNColorValue = remember { mutableStateOf(Color.Blue) }
+    val resultASColorValue = remember { mutableStateOf(Color.Blue) }
+    val resultPingColorValue = remember { mutableStateOf(Color.Blue) }
+    val colorPickerExpanded = remember { mutableStateOf(false) }
+    val colorPickerCurrentName = remember { mutableStateOf("borderColorValue") }
+    val colorPickerCurrentColor = remember { mutableStateOf(Color.White) }
+    val colorListExpanded = remember { mutableStateOf(false) }
+    val colorLabels: Map<String, String> = mapOf(
+        "borderColorValue" to "Border Color",
+        "disabledContentColorValue" to "Disabled Content Color",
+        "backgroundColorValue" to "Background Color",
+        "genericTextColorValue" to "Generic Text Color",
+        "navigationIconColorValue" to "Navigation Icon Color",
+        "buttonEnabledColorValue" to "Button Enabled Color",
+        "buttonDisabledColorValue" to "Button Disabled Color",
+        "buttonTextColorValue" to "Button Text Color",
+        "resultSNColorValue" to "Result SN Color",
+        "resultASColorValue" to "Result AS Color",
+        "resultPingColorValue" to "Result Ping Color"
+    )
+    val currentButtonColor = remember { mutableStateOf(Color.Blue) }
+
     LaunchedEffect(Unit) {
         languageSelectedIndex.intValue = languageOptions.indexOf(currentLanguage.value)
         enableTraceMapCheckedState.value = isTraceMapEnabled.value
@@ -151,21 +195,134 @@ fun SettingsColumn(
         powDNSNameText.value = apiDNSNamePOW.value
         apiHostNameText.value = apiHostName.value
         apiDNSNameText.value = apiDNSName.value
+        borderColorValue.value = borderColor.value
+        disabledContentColorValue.value = disabledContentColor.value
+        backgroundColorValue.value = backgroundColor.value
+        genericTextColorValue.value = genericTextColor.value
+        navigationIconColorValue.value = navigationIconColor.value
+        buttonEnabledColorValue.value = buttonEnabledColor.value
+        buttonDisabledColorValue.value = buttonDisabledColor.value
+        buttonTextColorValue.value = buttonTextColor.value
+        resultSNColorValue.value = resultSNColor.value
+        resultASColorValue.value = resultASColor.value
+        resultPingColorValue.value = resultPingColor.value
 
     }
     BackHandler {
         currentPage.value = "main"
     }
+
+    if (colorPickerExpanded.value) {
+        AlertDialog(
+            onDismissRequest = {
+                colorPickerExpanded.value = false
+            },
+            title = {
+                Text(text = colorLabels[colorPickerCurrentName.value].toString())
+            },
+            text = {
+                Column {
+                    ClassicColorPicker(
+                        modifier = modifier,
+                        color = HsvColor.from(color = colorPickerCurrentColor.value),
+                        showAlphaBar = true,
+                        onColorChanged = { color: HsvColor ->
+                            colorPickerCurrentColor.value = color.toColor()
+                        })
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        when (colorPickerCurrentName.value) {
+                            "borderColorValue" -> {
+                                borderColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "disabledContentColorValue" -> {
+                                disabledContentColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "backgroundColorValue" -> {
+                                backgroundColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "genericTextColorValue" -> {
+                                genericTextColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "navigationIconColorValue" -> {
+                                navigationIconColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "buttonEnabledColorValue" -> {
+                                buttonEnabledColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "buttonDisabledColorValue" -> {
+                                buttonDisabledColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "buttonTextColorValue" -> {
+                                buttonTextColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "resultSNColorValue" -> {
+                                resultSNColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "resultASColorValue" -> {
+                                resultASColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            "resultPingColorValue" -> {
+                                resultPingColorValue.value = colorPickerCurrentColor.value
+                            }
+
+                            else -> {
+                                borderColorValue.value = colorPickerCurrentColor.value
+                            }
+                        }
+                        colorPickerExpanded.value = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = buttonEnabledColor.value,
+                        contentColor = buttonTextColor.value,
+                        disabledContainerColor = buttonDisabledColor.value,
+                        disabledContentColor = disabledContentColor.value
+                    )
+                ) {
+                    Text("Ok")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        colorPickerExpanded.value = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = buttonEnabledColor.value,
+                        contentColor = buttonTextColor.value,
+                        disabledContainerColor = buttonDisabledColor.value,
+                        disabledContentColor = disabledContentColor.value
+                    )
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color.DarkGray)
+            .border(1.dp, borderColor.value)
             .padding(bottom = 1.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { currentPage.value = "main" }) {
-            Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.White)
+            Icon(Icons.Filled.Home, contentDescription = "Home", tint = navigationIconColor.value)
         }
         Button(
             modifier = Modifier.alignByBaseline(),
@@ -177,6 +334,17 @@ fun SettingsColumn(
                 traceTimeout.value = maxTimeoutSliderValue.floatValue.toInt().toString()
                 traceCount.value = maxPacketCountSliderValue.floatValue.toInt().toString()
                 currentDNSMode.value = dnsModeOptions[dnsModeSelectedIndex.intValue]
+                borderColor.value = borderColorValue.value
+                disabledContentColor.value = disabledContentColorValue.value
+                backgroundColor.value = backgroundColorValue.value
+                genericTextColor.value = genericTextColorValue.value
+                navigationIconColor.value = navigationIconColorValue.value
+                buttonEnabledColor.value = buttonEnabledColorValue.value
+                buttonDisabledColor.value = buttonDisabledColorValue.value
+                buttonTextColor.value = buttonTextColorValue.value
+                resultSNColor.value = resultSNColorValue.value
+                resultASColor.value = resultASColorValue.value
+                resultPingColor.value = resultPingColorValue.value
                 if (trHandler.identifyInput(dnsServerText.value) == IPV4_IDENTIFIER ||
                     trHandler.identifyInput(dnsServerText.value) == IPV6_IDENTIFIER
                 ) {
@@ -229,7 +397,18 @@ fun SettingsColumn(
                         "apiHostNamePOW" to apiHostNamePOW.value,
                         "apiDNSNamePOW" to apiDNSNamePOW.value,
                         "apiHostName" to apiHostName.value,
-                        "apiDNSName" to apiDNSName.value
+                        "apiDNSName" to apiDNSName.value,
+                        "borderColor" to borderColor.value.toArgb(),
+                        "disabledContentColor" to disabledContentColor.value.toArgb(),
+                        "backgroundColor" to backgroundColor.value.toArgb(),
+                        "genericTextColor" to genericTextColor.value.toArgb(),
+                        "navigationIconColor" to navigationIconColor.value.toArgb(),
+                        "buttonEnabledColor" to buttonEnabledColor.value.toArgb(),
+                        "buttonDisabledColor" to buttonDisabledColor.value.toArgb(),
+                        "buttonTextColor" to buttonTextColor.value.toArgb(),
+                        "resultSNColor" to resultSNColor.value.toArgb(),
+                        "resultASColor" to resultASColor.value.toArgb(),
+                        "resultPingColor" to resultPingColor.value.toArgb()
                     )
                     try {
                         val gson = Gson()
@@ -246,10 +425,10 @@ fun SettingsColumn(
 
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = ButtonEnabledColor,
-                contentColor = DefaultBackgroundColor,
-                disabledContainerColor = Color.Gray,
-                disabledContentColor = Color.LightGray
+                containerColor = buttonEnabledColor.value,
+                contentColor = buttonTextColor.value,
+                disabledContainerColor = buttonDisabledColor.value,
+                disabledContentColor = disabledContentColor.value
             )
 
         ) {
@@ -266,23 +445,24 @@ fun SettingsColumn(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                //.border(1.dp, DefaultBackgroundColorReverse)
+                //.border(1.dp, borderColor.value)
                 .padding(bottom = 1.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("API Language   ", color = DefaultBackgroundColorReverse)
+            Text("API Language   ", color = genericTextColor.value)
             TextButton(
                 onClick = { languageExpanded.value = true },
-                border = BorderStroke(2.dp, DefaultBackgroundColorReverse),
+                border = BorderStroke(2.dp, genericTextColor.value),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
                     text = languageOptions[languageSelectedIndex.intValue],
-                    color = DefaultBackgroundColorReverse
+                    color = genericTextColor.value
                 )
             }
             DropdownMenu(
+                modifier = Modifier.background(backgroundColor.value),
                 expanded = languageExpanded.value,
                 onDismissRequest = { languageExpanded.value = false }
             ) {
@@ -294,7 +474,7 @@ fun SettingsColumn(
                 }
             }
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -302,7 +482,7 @@ fun SettingsColumn(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Enable TraceMap", color = DefaultBackgroundColorReverse)
+            Text("Enable TraceMap", color = genericTextColor.value)
             Checkbox(
                 checked = enableTraceMapCheckedState.value,
                 onCheckedChange = { enableTraceMapCheckedState.value = it },
@@ -314,7 +494,7 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -323,10 +503,10 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("TTL:", color = DefaultBackgroundColorReverse)
+            Text("TTL:", color = genericTextColor.value)
             Text(
                 maxHopSliderValue.floatValue.toInt().toString(),
-                color = DefaultBackgroundColorReverse
+                color = genericTextColor.value
             )
             Slider(
                 value = maxHopSliderValue.floatValue,
@@ -338,7 +518,7 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -347,10 +527,10 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Single Packet Timeout (Sec):", color = DefaultBackgroundColorReverse)
+            Text("Single Packet Timeout (Sec):", color = genericTextColor.value)
             Text(
                 maxTimeoutSliderValue.floatValue.toInt().toString(),
-                color = DefaultBackgroundColorReverse
+                color = genericTextColor.value
             )
             Slider(
                 value = maxTimeoutSliderValue.floatValue,
@@ -362,7 +542,7 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -371,10 +551,10 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Packet Count:", color = DefaultBackgroundColorReverse)
+            Text("Packet Count:", color = genericTextColor.value)
             Text(
                 maxPacketCountSliderValue.floatValue.toInt().toString(),
-                color = DefaultBackgroundColorReverse
+                color = genericTextColor.value
             )
             Slider(
                 value = maxPacketCountSliderValue.floatValue,
@@ -386,27 +566,28 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                //.border(1.dp, DefaultBackgroundColorReverse)
+                //.border(1.dp, genericTextColor.value)
                 .padding(bottom = 1.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("DNS Mode   ", color = DefaultBackgroundColorReverse)
+            Text("DNS Mode   ", color = genericTextColor.value)
             TextButton(
                 onClick = { dnsModeExpanded.value = true },
-                border = BorderStroke(2.dp, DefaultBackgroundColorReverse),
+                border = BorderStroke(2.dp, genericTextColor.value),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
                     text = dnsModeOptions[dnsModeSelectedIndex.intValue],
-                    color = DefaultBackgroundColorReverse
+                    color = genericTextColor.value
                 )
             }
             DropdownMenu(
+                modifier = Modifier.background(backgroundColor.value),
                 expanded = dnsModeExpanded.value,
                 onDismissRequest = { dnsModeExpanded.value = false }
             ) {
@@ -418,7 +599,7 @@ fun SettingsColumn(
                 }
             }
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -427,7 +608,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("UDP/TCP DNS Server:", color = DefaultBackgroundColorReverse)
+            Text("UDP/TCP DNS Server:", color = genericTextColor.value)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -444,13 +625,13 @@ fun SettingsColumn(
                     dnsServerText.value = dnsServerText.value.replace("\n", "").trim()
                 },
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
+                    unfocusedContainerColor = backgroundColor.value,
+                    focusedContainerColor = backgroundColor.value,
+                    focusedTextColor = genericTextColor.value,
+                    unfocusedTextColor = genericTextColor.value
                 ),
                 placeholder = {
-                    Text("Insert IPv4 or IPv6", color = DefaultBackgroundColorReverse)
+                    Text("Insert IPv4 or IPv6", color = genericTextColor.value)
                 },
                 modifier = modifier
                     .fillMaxWidth()
@@ -458,28 +639,29 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                //.border(1.dp, DefaultBackgroundColorReverse)
+                //.border(1.dp, genericTextColor.value)
                 .padding(bottom = 1.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Doh Server   ", color = DefaultBackgroundColorReverse)
+            Text("Doh Server   ", color = genericTextColor.value)
             TextButton(
                 onClick = { dohServersExpanded.value = true },
-                border = BorderStroke(2.dp, DefaultBackgroundColorReverse),
+                border = BorderStroke(2.dp, genericTextColor.value),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
                     text = dohServersOptions[dohServersSelectedIndex.intValue],
-                    color = DefaultBackgroundColorReverse
+                    color = genericTextColor.value
                 )
             }
             DropdownMenu(
+                modifier = Modifier.background(backgroundColor.value),
                 expanded = dohServersExpanded.value,
                 onDismissRequest = { dohServersExpanded.value = false }
             ) {
@@ -491,7 +673,7 @@ fun SettingsColumn(
                 }
             }
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -500,7 +682,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("POW HostName:", color = DefaultBackgroundColorReverse)
+            Text("POW HostName:", color = genericTextColor.value)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -517,13 +699,13 @@ fun SettingsColumn(
                     powHostNameText.value = powHostNameText.value.replace("\n", "").trim()
                 },
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
+                    unfocusedContainerColor = backgroundColor.value,
+                    focusedContainerColor = backgroundColor.value,
+                    focusedTextColor = genericTextColor.value,
+                    unfocusedTextColor = genericTextColor.value
                 ),
                 placeholder = {
-                    Text("Insert Hostname", color = DefaultBackgroundColorReverse)
+                    Text("Insert Hostname", color = genericTextColor.value)
                 },
                 modifier = modifier
                     .fillMaxWidth()
@@ -531,7 +713,7 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -540,7 +722,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("POW DNSName:", color = DefaultBackgroundColorReverse)
+            Text("POW DNSName:", color = genericTextColor.value)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -557,13 +739,13 @@ fun SettingsColumn(
                     powDNSNameText.value = powDNSNameText.value.replace("\n", "").trim()
                 },
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
+                    unfocusedContainerColor = backgroundColor.value,
+                    focusedContainerColor = backgroundColor.value,
+                    focusedTextColor = genericTextColor.value,
+                    unfocusedTextColor = genericTextColor.value
                 ),
                 placeholder = {
-                    Text("Insert Hostname, IPv4 or IPv6", color = DefaultBackgroundColorReverse)
+                    Text("Insert Hostname, IPv4 or IPv6", color = genericTextColor.value)
                 },
                 modifier = modifier
                     .fillMaxWidth()
@@ -571,7 +753,7 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
 
         Row(
             modifier = Modifier
@@ -581,7 +763,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("API HostName:", color = DefaultBackgroundColorReverse)
+            Text("API HostName:", color = genericTextColor.value)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -598,13 +780,13 @@ fun SettingsColumn(
                     apiHostNameText.value = apiHostNameText.value.replace("\n", "").trim()
                 },
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
+                    unfocusedContainerColor = backgroundColor.value,
+                    focusedContainerColor = backgroundColor.value,
+                    focusedTextColor = genericTextColor.value,
+                    unfocusedTextColor = genericTextColor.value
                 ),
                 placeholder = {
-                    Text("Insert Hostname", color = DefaultBackgroundColorReverse)
+                    Text("Insert Hostname", color = genericTextColor.value)
                 },
                 modifier = modifier
                     .fillMaxWidth()
@@ -612,7 +794,7 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -621,7 +803,7 @@ fun SettingsColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text("API DNSName:", color = DefaultBackgroundColorReverse)
+            Text("API DNSName:", color = genericTextColor.value)
             TextField(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
@@ -638,13 +820,13 @@ fun SettingsColumn(
                     apiDNSNameText.value = apiDNSNameText.value.replace("\n", "").trim()
                 },
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = DefaultBackgroundColor,
-                    focusedContainerColor = DefaultBackgroundColor,
-                    focusedTextColor = DefaultBackgroundColorReverse,
-                    unfocusedTextColor = DefaultBackgroundColorReverse
+                    unfocusedContainerColor = backgroundColor.value,
+                    focusedContainerColor = backgroundColor.value,
+                    focusedTextColor = genericTextColor.value,
+                    unfocusedTextColor = genericTextColor.value
                 ),
                 placeholder = {
-                    Text("Insert Hostname, IPv4 or IPv6", color = DefaultBackgroundColorReverse)
+                    Text("Insert Hostname, IPv4 or IPv6", color = genericTextColor.value)
                 },
                 modifier = modifier
                     .fillMaxWidth()
@@ -652,7 +834,164 @@ fun SettingsColumn(
             )
 
         }
-        HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 1.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Select Color    ", color = genericTextColor.value)
+            TextButton(
+                onClick = { colorListExpanded.value = true },
+                border = BorderStroke(2.dp, genericTextColor.value),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = colorLabels[colorPickerCurrentName.value].toString(),
+                    color = genericTextColor.value
+                )
+            }
+            DropdownMenu(
+                modifier = Modifier.background(backgroundColor.value),
+                expanded = colorListExpanded.value,
+                onDismissRequest = { colorListExpanded.value = false }
+            ) {
+                colorLabels.keys.forEach { text ->
+                    DropdownMenuItem(onClick = {
+                        colorPickerCurrentName.value = text
+                        colorListExpanded.value = false
+                    }, text = { Text(text = colorLabels[text].toString()) })
+                }
+            }
+            when (colorPickerCurrentName.value) {
+                "borderColorValue" -> {
+                    currentButtonColor.value = borderColorValue.value
+                }
+
+                "disabledContentColorValue" -> {
+                    currentButtonColor.value = disabledContentColorValue.value
+                }
+
+                "backgroundColorValue" -> {
+                    currentButtonColor.value = backgroundColorValue.value
+                }
+
+                "genericTextColorValue" -> {
+                    currentButtonColor.value = genericTextColorValue.value
+                }
+
+                "navigationIconColorValue" -> {
+                    currentButtonColor.value = navigationIconColorValue.value
+                }
+
+                "buttonEnabledColorValue" -> {
+                    currentButtonColor.value = buttonEnabledColorValue.value
+                }
+
+                "buttonDisabledColorValue" -> {
+                    currentButtonColor.value = buttonDisabledColorValue.value
+                }
+
+                "buttonTextColorValue" -> {
+                    currentButtonColor.value = buttonTextColorValue.value
+                }
+
+                "resultSNColorValue" -> {
+                    currentButtonColor.value = resultSNColorValue.value
+                }
+
+                "resultASColorValue" -> {
+                    currentButtonColor.value = resultASColorValue.value
+                }
+
+                "resultPingColorValue" -> {
+                    currentButtonColor.value = resultPingColorValue.value
+                }
+
+                else -> {
+                    currentButtonColor.value = borderColorValue.value
+                }
+            }
+            Button(
+                modifier = Modifier.alignByBaseline(),
+                onClick = {
+                    colorPickerExpanded.value = true
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = currentButtonColor.value,
+                    contentColor = currentButtonColor.value,
+                    disabledContainerColor = currentButtonColor.value,
+                    disabledContentColor = currentButtonColor.value
+                )
+            ) {
+                Text("")
+            }
+
+        }
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 1.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Color Presets    ", color = genericTextColor.value)
+            Button(
+                onClick = {
+                    borderColorValue.value = Color.DarkGray
+                    disabledContentColorValue.value = Color.DarkGray
+                    backgroundColorValue.value = Color.Black
+                    genericTextColorValue.value = Color.White
+                    navigationIconColorValue.value = Color.White
+                    buttonEnabledColorValue.value = Color(0xFF00F6FF)
+                    buttonDisabledColorValue.value = Color.Gray
+                    buttonTextColorValue.value = Color.Black
+                    resultSNColorValue.value = Color.Yellow
+                    resultASColorValue.value = Color.Green
+                    resultPingColorValue.value = Color(0xFF00FFFF)
+
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = buttonEnabledColor.value,
+                    contentColor = buttonTextColor.value,
+                    disabledContainerColor = buttonDisabledColor.value,
+                    disabledContentColor = disabledContentColor.value
+                )
+            ) {
+                Text("Dark Preset")
+            }
+            Button(
+                onClick = {
+                    borderColorValue.value = Color(0xFF334F77)
+                    disabledContentColorValue.value = Color(0x61FFFFFF)
+                    backgroundColorValue.value = Color(0xFF012456)
+                    genericTextColorValue.value = Color.White
+                    navigationIconColorValue.value = Color.White
+                    buttonEnabledColorValue.value = Color(0xFFFF9900)
+                    buttonDisabledColorValue.value = Color(0x1EFF9900)
+                    buttonTextColorValue.value = Color.White
+                    resultSNColorValue.value = Color.Yellow
+                    resultASColorValue.value = Color.Green
+                    resultPingColorValue.value = Color(0xFF00FFFF)
+
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = buttonEnabledColor.value,
+                    contentColor = buttonTextColor.value,
+                    disabledContainerColor = buttonDisabledColor.value,
+                    disabledContentColor = disabledContentColor.value
+                )
+            ) {
+                Text("Light Preset")
+            }
+
+        }
+        HorizontalDivider(color = borderColor.value, thickness = 1.dp)
 
 
     }

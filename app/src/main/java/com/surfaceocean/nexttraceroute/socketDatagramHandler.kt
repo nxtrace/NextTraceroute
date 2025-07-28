@@ -1,7 +1,7 @@
 /*
 -
 NextTraceroute, an Android traceroute app using Nexttrace API
-Copyright (C) 2024 surfaceocean
+Copyright (C) 2024-2025 surfaceocean
 Email: r2qb8uc5@protonmail.com
 GitHub: https://github.com/nxtrace/NextTraceroute
 This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ The "square/okhttp" library is licensed under the Apache 2.0 License.
 The "gson" library is licensed under the Apache 2.0 License.
 The "slf4j-android" library is licensed under the MIT License.
 The "androidx" library is licensed under the Apache 2.0 License.
+The "Compose Color Picker" library is licensed under the MIT License.
 
 */
 
@@ -35,6 +36,6 @@ The "androidx" library is licensed under the Apache 2.0 License.
 package com.surfaceocean.nexttraceroute
 
 
-class socketDatagramHandler {
-
-}
+//class socketDatagramHandler {
+//
+//}

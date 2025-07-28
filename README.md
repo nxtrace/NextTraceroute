@@ -95,6 +95,8 @@ The "slf4j-android" library is licensed under the MIT License.
 
 The "androidx" library is licensed under the Apache 2.0 License.
 
+The "Compose Color Picker" library is licensed under the MIT License.
+
 ```
 
 [Privacy Policy](./PrivacyPolicy.md)

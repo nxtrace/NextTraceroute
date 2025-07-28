@@ -97,6 +97,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.compose.color.picker.android)
     implementation(libs.dnsjava)
     implementation(libs.ipaddress)
     implementation(libs.okhttp)

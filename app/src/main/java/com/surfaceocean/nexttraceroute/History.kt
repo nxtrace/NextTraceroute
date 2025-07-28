@@ -1,7 +1,7 @@
 /*
 
 NextTraceroute, an Android traceroute app using Nexttrace API
-Copyright (C) 2024 surfaceocean
+Copyright (C) 2024-2025 surfaceocean
 Email: r2qb8uc5@protonmail.com
 GitHub: https://github.com/nxtrace/NextTraceroute
 This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ The "square/okhttp" library is licensed under the Apache 2.0 License.
 The "gson" library is licensed under the Apache 2.0 License.
 The "slf4j-android" library is licensed under the MIT License.
 The "androidx" library is licensed under the Apache 2.0 License.
+The "Compose Color Picker" library is licensed under the MIT License.
 
 */
 
@@ -94,9 +95,6 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.withTransaction
-import com.surfaceocean.nexttraceroute.ui.theme.ButtonEnabledColor
-import com.surfaceocean.nexttraceroute.ui.theme.DefaultBackgroundColor
-import com.surfaceocean.nexttraceroute.ui.theme.DefaultBackgroundColorReverse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -155,7 +153,18 @@ abstract class AppDatabase : RoomDatabase() {
 @Composable
 fun HistoryPage(
     context: Context, currentPage: MutableState<String>,
-    historyDao: HistoryDao, db: AppDatabase
+    historyDao: HistoryDao, db: AppDatabase,
+    borderColor: MutableState<Color>,
+    disabledContentColor: MutableState<Color>,
+    backgroundColor: MutableState<Color>,
+    genericTextColor: MutableState<Color>,
+    navigationIconColor: MutableState<Color>,
+    buttonEnabledColor: MutableState<Color>,
+    buttonDisabledColor: MutableState<Color>,
+    buttonTextColor: MutableState<Color>,
+    resultSNColor: MutableState<Color>,
+    resultASColor: MutableState<Color>,
+    resultPingColor: MutableState<Color>
 ) {
     BackHandler {
         currentPage.value = "main"
@@ -242,13 +251,13 @@ fun HistoryPage(
             .fillMaxWidth()
             .statusBarsPadding()
             .systemBarsPadding()
-            .border(1.dp, DefaultBackgroundColorReverse)
+            .border(1.dp, borderColor.value)
             .padding(bottom = 1.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { currentPage.value = "main" }) {
-            Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.White)
+            Icon(Icons.Filled.Home, contentDescription = "Home", tint = navigationIconColor.value)
         }
         Button(
             onClick = {
@@ -256,24 +265,31 @@ fun HistoryPage(
 
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = ButtonEnabledColor,
-                contentColor = DefaultBackgroundColor,
-                disabledContainerColor = Color.Gray,
-                disabledContentColor = Color.LightGray
+                containerColor = buttonEnabledColor.value,
+                contentColor = buttonTextColor.value,
+                disabledContainerColor = buttonDisabledColor.value,
+                disabledContentColor = disabledContentColor.value
             )
         ) {
             Text("Clear")
         }
         if (showDeleteAllWarningDialog.value) {
             AlertDialog(
+                containerColor = backgroundColor.value,
                 onDismissRequest = {
                     showDeleteAllWarningDialog.value = false
                 },
                 title = {
-                    Text(text = "Warning")
+                    Text(
+                        text = "Warning",
+                        color = genericTextColor.value
+                    )
                 },
                 text = {
-                    Text("Are you sure to clear the history database?")
+                    Text(
+                        "Are you sure to clear the history database?",
+                        color = genericTextColor.value
+                    )
                 },
                 confirmButton = {
                     Button(
@@ -282,10 +298,10 @@ fun HistoryPage(
                             showDeleteAllWarningDialog.value = false
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = ButtonEnabledColor,
-                            contentColor = DefaultBackgroundColor,
-                            disabledContainerColor = Color.Gray,
-                            disabledContentColor = Color.LightGray
+                            containerColor = buttonEnabledColor.value,
+                            contentColor = buttonTextColor.value,
+                            disabledContainerColor = buttonDisabledColor.value,
+                            disabledContentColor = disabledContentColor.value
                         )
                     ) {
                         Text("Yes")
@@ -297,10 +313,10 @@ fun HistoryPage(
                             showDeleteAllWarningDialog.value = false
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = ButtonEnabledColor,
-                            contentColor = DefaultBackgroundColor,
-                            disabledContainerColor = Color.Gray,
-                            disabledContentColor = Color.LightGray
+                            containerColor = buttonEnabledColor.value,
+                            contentColor = buttonTextColor.value,
+                            disabledContainerColor = buttonDisabledColor.value,
+                            disabledContentColor = disabledContentColor.value
                         )
                     ) {
                         Text("Cancel")
@@ -318,7 +334,7 @@ fun HistoryPage(
         LazyColumn(
             state = listState,
             modifier = Modifier
-                .border(1.dp, DefaultBackgroundColorReverse)
+                .border(1.dp, borderColor.value)
                 .fillMaxWidth()
         ) {
             itemsIndexed(items = allData, key = { _, item -> item.uuid }) { allDataIndex, item ->
@@ -328,7 +344,7 @@ fun HistoryPage(
                 ).format(Date(item.timeStamp)) + "\n"
                 Row(
                     modifier = Modifier
-                        .border(1.dp, DefaultBackgroundColorReverse)
+                        .border(1.dp, borderColor.value)
                         .padding(bottom = 1.dp),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
@@ -340,7 +356,7 @@ fun HistoryPage(
                         horizontalAlignment = Alignment.Start,
                     ) {
                         Text(
-                            color = Color.Green,
+                            color = resultASColor.value,
                             text = SimpleDateFormat(
                                 "yyyy-MM-dd HH:mm:ss",
                                 Locale.getDefault()
@@ -384,7 +400,7 @@ fun HistoryPage(
 
                                 ) {
                                 Text(
-                                    color = Color.Yellow,
+                                    color = resultSNColor.value,
                                     text = item.ip,
                                     modifier = Modifier.padding(start = 4.dp)
                                 )
@@ -427,7 +443,7 @@ fun HistoryPage(
 
                                 ) {
                                 Text(
-                                    color = Color.Cyan,
+                                    color = resultPingColor.value,
                                     text = item.domain,
                                     modifier = Modifier.padding(start = 4.dp)
                                 )
@@ -441,20 +457,31 @@ fun HistoryPage(
                             currentItemCursor.intValue = allDataIndex
 
                         }) {
-                        Icon(Icons.Filled.Info, contentDescription = "Info", tint = Color.White)
+                        Icon(
+                            Icons.Filled.Info,
+                            contentDescription = "Info",
+                            tint = navigationIconColor.value
+                        )
                     }
                     if (currentItemCursor.intValue == allDataIndex) {
                         val scrollState = rememberScrollState()
                         AlertDialog(
+                            containerColor = backgroundColor.value,
                             onDismissRequest = {
                                 currentItemCursor.intValue = MAGIC_NEGATIVE_INT
                             },
                             title = {
-                                Text(text = item.uuid)
+                                Text(
+                                    text = item.uuid,
+                                    color = genericTextColor.value
+                                )
                             },
                             text = {
                                 Column(modifier = Modifier.verticalScroll(scrollState)) {
-                                    Text(preShareText + item.history)
+                                    Text(
+                                        preShareText + item.history,
+                                        color = genericTextColor.value
+                                    )
                                 }
 
                             },
@@ -471,10 +498,10 @@ fun HistoryPage(
                                             .show()
                                     },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = ButtonEnabledColor,
-                                        contentColor = DefaultBackgroundColor,
-                                        disabledContainerColor = Color.Gray,
-                                        disabledContentColor = Color.LightGray
+                                        containerColor = buttonEnabledColor.value,
+                                        contentColor = buttonTextColor.value,
+                                        disabledContainerColor = buttonDisabledColor.value,
+                                        disabledContentColor = disabledContentColor.value
                                     )
                                 ) {
                                     Text("Copy")
@@ -486,10 +513,10 @@ fun HistoryPage(
                                         currentItemCursor.intValue = MAGIC_NEGATIVE_INT
                                     },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = ButtonEnabledColor,
-                                        contentColor = DefaultBackgroundColor,
-                                        disabledContainerColor = Color.Gray,
-                                        disabledContentColor = Color.LightGray
+                                        containerColor = buttonEnabledColor.value,
+                                        contentColor = buttonTextColor.value,
+                                        disabledContainerColor = buttonDisabledColor.value,
+                                        disabledContentColor = disabledContentColor.value
                                     )
                                 ) {
                                     Text("OK")
@@ -506,10 +533,18 @@ fun HistoryPage(
                         val chooser = Intent.createChooser(shareIntent, "Share to")
                         context.startActivity(chooser)
                     }) {
-                        Icon(Icons.Filled.Share, contentDescription = "Share", tint = Color.White)
+                        Icon(
+                            Icons.Filled.Share,
+                            contentDescription = "Share",
+                            tint = navigationIconColor.value
+                        )
                     }
                     IconButton(onClick = { currentDeletionUUID.value = item.uuid }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Delete",
+                            tint = navigationIconColor.value
+                        )
                     }
 
                 }
