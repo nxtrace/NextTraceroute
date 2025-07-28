@@ -1,0 +1,5 @@
+1. Add theme support using the "Compose Color Picker" library.
+2. Update gradle and kotlin
+3. Update dependencies
+4. Optimize code to match the new kotlin version
+5. Add DNSPod's DoH to the settings
