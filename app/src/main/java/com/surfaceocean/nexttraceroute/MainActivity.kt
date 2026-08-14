@@ -136,14 +136,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             NextTracerouteTheme {
-                val borderColor = remember { mutableStateOf(Color.DarkGray) }
-                val disabledContentColor = remember { mutableStateOf(Color.DarkGray) }
-                val backgroundColor = remember { mutableStateOf(Color.Black) }
+                val borderColor = remember { mutableStateOf(Color(0xFF334F77)) }
+                val disabledContentColor = remember { mutableStateOf(Color(0x61FFFFFF)) }
+                val backgroundColor = remember { mutableStateOf(Color(0xFF012456)) }
                 val genericTextColor = remember { mutableStateOf(Color.White) }
                 val navigationIconColor = remember { mutableStateOf(Color.White) }
-                val buttonEnabledColor = remember { mutableStateOf(Color(0xFF00F6FF)) }
-                val buttonDisabledColor = remember { mutableStateOf(Color.Gray) }
-                val buttonTextColor = remember { mutableStateOf(Color.Black) }
+                val buttonEnabledColor = remember { mutableStateOf(Color(0xFFFF9900)) }
+                val buttonDisabledColor = remember { mutableStateOf(Color(0x1EFF9900)) }
+                val buttonTextColor = remember { mutableStateOf(Color.White) }
                 val resultSNColor = remember { mutableStateOf(Color.Yellow) }
                 val resultASColor = remember { mutableStateOf(Color.Green) }
                 val resultPingColor = remember { mutableStateOf(Color(0xFF00FFFF)) }
@@ -1011,9 +1011,14 @@ fun MainColumn(
 //        }) {
 //            Text("Update")
 //        }
-        //Select a ip and change
-
+        //Select an ip and change
         if (multipleIps.isNotEmpty() && tracerouteThreadsIntList.none { it != 0 }) {
+            //Fix crash caused by potential duplicated IPs
+            val uniqueItems = multipleIps.distinctBy { it.value.trim() }
+            if (uniqueItems.size != multipleIps.size) {
+                multipleIps.clear()
+                multipleIps.addAll(uniqueItems)
+            }
             LazyColumn(
                 modifier = Modifier
                     .border(1.dp, borderColor.value)
@@ -1176,7 +1181,7 @@ fun SearchBar(
         singleLine = true,
         textStyle = TextStyle(color = genericTextColor.value),
         value = onSearchResults.value,
-        //search bar can only clicked again if everything is done
+        //search bar can only be clicked again if everything is done
         onValueChange = {
             if (isSearchBarEnabled.value) {
                 onSearchResults.value = it

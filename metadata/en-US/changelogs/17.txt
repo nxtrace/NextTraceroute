@@ -1,0 +1,4 @@
+1. Fix a crash caused by potential duplicated IPs in LazyColumn
+2. Change default color preset
+3. Update AGP to 9.3.1
+4. Update dependencies
